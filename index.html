@@ -22,19 +22,10 @@
 
         /* --- Base & Scrollbar --- */
         * { box-sizing: border-box; }
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
         body {
-            font-family: var(--font-main);
-            margin: 0;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: var(--font-main); margin: 0; background-color: var(--bg-primary);
+            color: var(--text-primary); display: flex; justify-content: center; align-items: center;
         }
         .hidden { display: none !important; }
         ::-webkit-scrollbar { width: 8px; }
@@ -45,21 +36,15 @@
         /* --- Auth Page Redesign --- */
         #auth-view {
             width: 100%; height: 100%; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            background: #121212;
+            justify-content: center; align-items: center; background: #121212;
             background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0);
-            background-size: 20px 20px;
-            animation: move-bg 10s linear infinite;
+            background-size: 20px 20px; animation: move-bg 10s linear infinite;
         }
-        @keyframes move-bg {
-            from { background-position: 0 0; }
-            to { background-position: 40px 40px; }
-        }
+        @keyframes move-bg { from { background-position: 0 0; } to { background-position: 40px 40px; } }
         .auth-container {
             width: 90%; max-width: 400px; background: rgba(30, 30, 30, 0.85);
             padding: 2.5rem; border-radius: 16px; backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;
+            border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;
         }
         .auth-container h1 {
             font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;
@@ -70,12 +55,10 @@
         .auth-container .input-field {
             width: 100%; padding: 1rem; margin-bottom: 1rem; background: var(--bg-tertiary);
             border: 1px solid var(--border-color); color: var(--text-primary);
-            border-radius: 8px; font-size: 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            border-radius: 8px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s;
         }
         .auth-container .input-field:focus {
-            outline: none;
-            border-color: var(--accent-primary);
+            outline: none; border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
         }
         .auth-container .auth-button {
@@ -91,15 +74,13 @@
         .auth-container .error {
             color: var(--error-color); background: rgba(244, 63, 94, 0.1);
             text-align: center; margin-bottom: 1rem; padding: 0.75rem;
-            border-radius: 8px; font-size: 0.9em;
-            border: 1px solid rgba(244, 63, 94, 0.3);
+            border-radius: 8px; font-size: 0.9em; border: 1px solid rgba(244, 63, 94, 0.3);
         }
 
         /* --- Main App Layout --- */
         #app-container {
             display: flex; width: 100%; height: 100%; max-width: 1600px;
-            background: var(--bg-secondary); overflow: hidden;
-            position: relative; /* For mobile view transitions */
+            background: var(--bg-secondary); overflow: hidden; position: relative;
         }
         #side-panel {
             width: 320px; background: var(--bg-primary); display: flex;
@@ -140,7 +121,7 @@
         .message-container.sent { margin-left: auto; flex-direction: row-reverse; }
         .message-bubble { background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: 18px; }
         .message-container.sent .message-bubble { background: var(--accent-primary); color: white; }
-        .message-sender { font-weight: bold; font-size: 0.8em; margin-bottom: 0.25rem; color: var(--accent-secondary); }
+        .message-sender { font-weight: bold; font-size: 0.8em; margin-bottom: 0.25rem; color: var(--accent-secondary); cursor: pointer; }
         .message-container.sent .message-sender { display: none; }
         .message-content img { max-width: 100%; border-radius: 12px; margin-top: 5px; cursor: pointer; }
         .message-content a { color: #8ab4f8; text-decoration: none; }
@@ -160,6 +141,13 @@
         #profile-panel-avatar { width: 128px; height: 128px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 2px solid var(--border-color); }
         #profile-panel h3 { margin: 0 0 0.5rem 0; }
         #profile-panel p { color: var(--text-secondary); text-align: center; }
+        /* NEW: Start chat button style */
+        #start-chat-from-profile-btn {
+            background: var(--accent-primary); color: white; border: none; border-radius: 8px;
+            padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500; cursor: pointer;
+            margin-top: 1.5rem; transition: background-color 0.2s;
+        }
+        #start-chat-from-profile-btn:hover { background: var(--accent-secondary); }
         .close-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; }
 
         /* --- Modals --- */
@@ -182,27 +170,25 @@
         .modal .modal-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
         .modal button { padding: 0.6rem 1.2rem; background: var(--accent-primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 1rem; }
         .modal .cancel-btn { background: var(--bg-tertiary); }
+        /* NEW: User search results styling */
+        #user-search-results { max-height: 300px; overflow-y: auto; margin-top: 1rem; }
+        .search-result-item {
+            display: flex; align-items: center; padding: 0.75rem;
+            border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .search-result-item:hover { background: var(--bg-hover); }
 
         /* --- Responsive Design --- */
         .hidden-desktop { display: none; }
-        @media (max-width: 900px) {
-            #profile-panel { width: 300px; }
-        }
+        @media (max-width: 900px) { #profile-panel { width: 300px; } }
         @media (max-width: 768px) {
             .hidden-mobile { display: none; }
             .hidden-desktop { display: block; }
             #app-container { flex-direction: column; }
-            #side-panel {
-                width: 100%; height: 100%; border-right: none;
-                position: absolute; transform: translateX(0); z-index: 20;
-            }
-            #main-panel {
-                width: 100%; height: 100%; position: absolute;
-                transform: translateX(100%); z-index: 30;
-            }
+            #side-panel { width: 100%; height: 100%; border-right: none; position: absolute; transform: translateX(0); z-index: 20; }
+            #main-panel { width: 100%; height: 100%; position: absolute; transform: translateX(100%); z-index: 30; }
             #app-container.chat-view-active #side-panel { transform: translateX(-100%); }
             #app-container.chat-view-active #main-panel { transform: translateX(0); }
-
             #profile-panel { width: 100%; z-index: 100; }
             #profile-panel.visible { box-shadow: -10px 0 20px rgba(0,0,0,0.3); }
         }
@@ -213,38 +199,28 @@
     <!-- Auth View -->
     <div id="auth-view">
         <div class="auth-container">
-            <!-- Register View (Default) -->
             <div id="register-view">
-                <h1>NasralGram</h1>
-                <p>Create an account to start messaging.</p>
+                <h1>NasralGram</h1> <p>Create an account to start messaging.</p>
                 <form id="register-form">
                     <div id="register-error" class="error hidden"></div>
                     <input type="text" id="register-username" class="input-field" placeholder="Username" required>
                     <input type="password" id="register-password" class="input-field" placeholder="Password" required>
                     <button type="submit" class="auth-button">Create Account & Enter</button>
                 </form>
-                <div class="switch-link" onclick="showAuthForm('login-view')">
-                    Already have an account? <span>Log In</span>
-                </div>
+                <div class="switch-link" onclick="showAuthForm('login-view')">Already have an account? <span>Log In</span></div>
             </div>
-
-            <!-- Login View -->
             <div id="login-view" class="hidden">
-                <h1>NasralGram</h1>
-                <p>Welcome back! Sign in to continue.</p>
+                <h1>NasralGram</h1> <p>Welcome back! Sign in to continue.</p>
                 <form id="login-form">
                     <div id="login-error" class="error hidden"></div>
                     <input type="text" id="login-username" class="input-field" placeholder="Username" required>
                     <input type="password" id="login-password" class="input-field" placeholder="Password" required>
                     <button type="submit" class="auth-button">Log In</button>
                 </form>
-                <div class="switch-link" onclick="showAuthForm('register-view')">
-                    Don't have an account? <span>Sign Up</span>
-                </div>
+                <div class="switch-link" onclick="showAuthForm('register-view')">Don't have an account? <span>Sign Up</span></div>
             </div>
         </div>
     </div>
-
 
     <!-- Main App Container -->
     <div id="app-container" class="hidden">
@@ -252,6 +228,8 @@
             <div class="side-panel-header">
                 <h3 id="current-username-display"></h3>
                 <div class="header-buttons">
+                    <!-- NEW: Search Button -->
+                    <button onclick="showUserSearchModal()" title="Search Users">🔍</button>
                     <button onclick="showNewChatModal()" title="New Chat">➕</button>
                     <button onclick="showSettingsModal()" title="Settings">⚙️</button>
                 </div>
@@ -273,15 +251,17 @@
                 </form>
             </div>
         </div>
-        <div id="profile-panel"> <!-- Initially hidden via transform -->
+        <div id="profile-panel">
             <button class="close-btn" onclick="hideProfilePanel()">×</button>
             <img id="profile-panel-avatar" src="" alt="Profile Picture">
             <h3 id="profile-panel-username"></h3>
             <p id="profile-panel-bio"></p>
+            <!-- NEW: Start Chat Button -->
+            <button id="start-chat-from-profile-btn" class="hidden">Start Chat</button>
         </div>
     </div>
 
-    <!-- New Chat Modal -->
+    <!-- Modals -->
     <div id="new-chat-modal" class="modal-backdrop hidden">
         <div class="modal">
             <h2>New Chat</h2>
@@ -296,7 +276,6 @@
         </div>
     </div>
     
-    <!-- Settings Modal -->
     <div id="settings-modal" class="modal-backdrop hidden">
         <div class="modal">
             <h2>Settings</h2>
@@ -315,19 +294,28 @@
         </div>
     </div>
 
+    <!-- NEW: User Search Modal -->
+    <div id="user-search-modal" class="modal-backdrop hidden">
+        <div class="modal">
+            <h2>Search for Users</h2>
+            <form id="user-search-form">
+                <input type="text" id="user-search-input" placeholder="Enter username...">
+            </form>
+            <div id="user-search-results">
+                <p style="color: var(--text-secondary); text-align:center;">Enter at least 2 characters to search.</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="hideUserSearchModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         const API_URL = 'https://nasralgram.onrender.com';
         let state = {
-            token: null,
-            currentUsername: null,
-            activeChatId: null,
-            chats: [],
-            messages: {}, // { chatId: [message, ...] }
-            lastMessageId: {}, // { chatId: lastId }
-            pollingInterval: null,
-            syncInterval: null,
-            messageQueue: [], // Messages to be sent in a batch
+            token: null, currentUsername: null, activeChatId: null, chats: [],
+            messages: {}, lastMessageId: {}, pollingInterval: null, syncInterval: null, messageQueue: [],
         };
 
         // --- UTILS & HELPERS ---
@@ -345,35 +333,29 @@
 
         async function apiFetch(endpoint, options = {}) {
             const headers = { 'Content-Type': 'application/json', ...options.headers };
-            if (state.token) {
-                headers['x-access-token'] = state.token;
-            }
+            if (state.token) { headers['x-access-token'] = state.token; }
             try {
                 const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-                
                 const contentType = response.headers.get("content-type");
                 let data;
-                
                 if (contentType && contentType.includes("application/json")) {
                     data = await response.json();
                 } else {
                     const textData = await response.text();
                     if (!response.ok) {
                         console.error("Non-JSON error response from server:", textData);
-                        throw new Error(`Server returned an error. Check console for details. (Status: ${response.status})`);
+                        throw new Error(`Server error (Status: ${response.status})`);
                     }
-                    return textData; // For successful non-json responses
+                    return textData;
                 }
-
                 if (!response.ok) {
                     if (response.status === 401) logout();
                     throw new Error(data.message || 'An unknown API error occurred.');
                 }
                 return data;
             } catch (error) {
-                // Catches network errors and errors thrown from above
                 console.error(`API Fetch Error for endpoint ${endpoint}:`, error);
-                throw error; // Re-throw to be caught by the calling function
+                throw error;
             }
         }
 
@@ -394,18 +376,12 @@
             const errorEl = document.getElementById('login-error');
             try {
                 errorEl.classList.add('hidden');
-                const data = await apiFetch('/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ username, password })
-                });
-                state.token = data.token;
-                state.currentUsername = data.username;
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('username', data.username);
+                const data = await apiFetch('/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+                state.token = data.token; state.currentUsername = data.username;
+                localStorage.setItem('authToken', data.token); localStorage.setItem('username', data.username);
                 await initializeApp();
             } catch (error) {
-                errorEl.textContent = error.message;
-                errorEl.classList.remove('hidden');
+                errorEl.textContent = error.message; errorEl.classList.remove('hidden');
             }
         });
 
@@ -415,40 +391,22 @@
             const password = document.getElementById('register-password').value;
             const errorEl = document.getElementById('register-error');
             errorEl.classList.add('hidden');
-
             try {
-                // Step 1: Register the user
-                await apiFetch('/register', {
-                    method: 'POST',
-                    body: JSON.stringify({ username, password })
-                });
-
-                // Step 2: Automatically log in the user with the same credentials
-                const data = await apiFetch('/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ username, password })
-                });
-                
-                // Step 3: Store credentials and initialize the app
-                state.token = data.token;
-                state.currentUsername = data.username;
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('username', data.username);
+                await apiFetch('/register', { method: 'POST', body: JSON.stringify({ username, password }) });
+                const data = await apiFetch('/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+                state.token = data.token; state.currentUsername = data.username;
+                localStorage.setItem('authToken', data.token); localStorage.setItem('username', data.username);
                 await initializeApp();
-
             } catch (error) {
-                errorEl.textContent = error.message;
-                errorEl.classList.remove('hidden');
+                errorEl.textContent = error.message; errorEl.classList.remove('hidden');
             }
         });
         
         function logout() {
             localStorage.clear();
             state = { token: null, currentUsername: null, activeChatId: null, chats: [], messages: {}, lastMessageId: {}, messageQueue: [] };
-            clearInterval(state.pollingInterval);
-            clearInterval(state.syncInterval);
-            showView('auth-view');
-            showAuthForm('register-view'); // Default to register view on logout
+            clearInterval(state.pollingInterval); clearInterval(state.syncInterval);
+            showView('auth-view'); showAuthForm('register-view');
             document.getElementById('app-container').classList.remove('chat-view-active');
         }
 
@@ -462,16 +420,13 @@
                 item.className = 'chat-item';
                 if (chat.id === state.activeChatId) item.classList.add('active');
                 item.onclick = () => selectChat(chat.id);
-                
                 const avatarSrc = chat.profile_picture ? `data:image/png;base64,${chat.profile_picture}` : `https://api.dicebear.com/7.x/initials/svg?seed=${chat.name}`;
-                
                 item.innerHTML = `
                     <img src="${avatarSrc}" class="chat-avatar">
                     <div class="chat-info">
                         <div class="chat-name">${chat.name}</div>
                         <div class="chat-preview">${chat.last_message || ''}</div>
-                    </div>
-                `;
+                    </div>`;
                 chatListEl.appendChild(item);
             });
         }
@@ -481,9 +436,7 @@
             const messageListEl = document.getElementById('message-list');
             messageListEl.innerHTML = '';
             const messages = state.messages[state.activeChatId] || [];
-            messages.forEach(msg => {
-                appendMessage(msg, false); // don't scroll for each message
-            });
+            messages.forEach(msg => { appendMessage(msg, false); });
             messageListEl.scrollTop = messageListEl.scrollHeight;
         }
 
@@ -491,9 +444,7 @@
             const messageListEl = document.getElementById('message-list');
             const container = document.createElement('div');
             container.className = 'message-container';
-            if (msg.sender_username === state.currentUsername) {
-                container.classList.add('sent');
-            }
+            if (msg.sender_username === state.currentUsername) { container.classList.add('sent'); }
 
             let contentHTML = `<div class="message-content">${parseMentions(msg.text_content || '')}</div>`;
             if (msg.content_type === 'image' && msg.media_data_url) {
@@ -503,22 +454,13 @@
             } else if (msg.content_type === 'ai_response') {
                  contentHTML = `<div class="message-content ai-response"><b>AI Response:</b><br>${parseMentions(msg.text_content)}</div>`;
             }
-            
             const senderHTML = msg.sender_username === state.currentUsername ? '' : `<div class="message-sender" onclick="showUserProfile('${msg.sender_username}')">${msg.sender_username}</div>`;
-
-            container.innerHTML = `
-                <div class="message-bubble">
-                    ${senderHTML}
-                    ${contentHTML}
-                    <div class="timestamp">${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-            `;
+            container.innerHTML = `<div class="message-bubble">${senderHTML}${contentHTML}<div class="timestamp">${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div></div>`;
             messageListEl.appendChild(container);
             if (scroll) messageListEl.scrollTop = messageListEl.scrollHeight;
         }
         
         function parseMentions(text) {
-            // Sanitize text before inserting to prevent XSS from @mentions
             const sanitizedText = text.replace(/</g, "<").replace(/>/g, ">");
             return sanitizedText.replace(/@(\w+)/g, '<a href="#" onclick="event.preventDefault(); showUserProfile(\'$1\')">@$1</a>');
         }
@@ -527,11 +469,9 @@
         async function initializeApp() {
             showView('app-container');
             document.getElementById('current-username-display').textContent = state.currentUsername;
-            
             try {
                 await loadChats();
-                startPolling();
-                startSyncing();
+                startPolling(); startSyncing();
             } catch (error) {
                 console.error("Critical error during app initialization:", error);
                 alert("Could not initialize the app. Please try refreshing the page.");
@@ -541,169 +481,102 @@
         async function loadChats() {
             try {
                 const newChats = await apiFetch('/api/chats');
-                // A simple check to see if we need to re-render
                 if(JSON.stringify(state.chats) !== JSON.stringify(newChats)){
-                    state.chats = newChats;
-                    renderChatList();
+                    state.chats = newChats; renderChatList();
                 }
-            } catch (error) {
-                console.error("Failed to load chats:", error);
-                // Don't rethrow here, allow the app to run without initial chats
-            }
+            } catch (error) { console.error("Failed to load chats:", error); }
         }
         
         async function selectChat(chatId) {
             if (state.activeChatId === chatId) return;
             state.activeChatId = chatId;
-            renderChatList(); // To update active highlight
+            renderChatList();
             document.getElementById('app-container').classList.add('chat-view-active');
-            
             const chat = state.chats.find(c => c.id === chatId);
             document.getElementById('chat-title').textContent = chat.name;
-            
             if (!state.messages[chatId]) {
-                state.messages[chatId] = [];
-                state.lastMessageId[chatId] = 0;
+                state.messages[chatId] = []; state.lastMessageId[chatId] = 0;
                 try {
                     const messages = await apiFetch(`/api/messages/${chatId}`);
                     state.messages[chatId] = messages;
-                    if(messages.length > 0) {
-                        state.lastMessageId[chatId] = messages[messages.length - 1].id;
-                    }
-                } catch(e){
-                     console.error(`Failed to load messages for chat ${chatId}`, e);
-                }
+                    if(messages.length > 0) { state.lastMessageId[chatId] = messages[messages.length - 1].id; }
+                } catch(e){ console.error(`Failed to load messages for chat ${chatId}`, e); }
             }
             renderMessages();
         }
 
         document.getElementById('back-to-chats').addEventListener('click', () => {
             document.getElementById('app-container').classList.remove('chat-view-active');
-            state.activeChatId = null;
-            renderChatList(); // un-highlight
+            state.activeChatId = null; renderChatList();
         });
 
         function startPolling() {
             if (state.pollingInterval) clearInterval(state.pollingInterval);
             state.pollingInterval = setInterval(async () => {
-                // Poll for chats to see new messages/chats from anyone
                 await loadChats();
-
-                // Poll for messages in the active chat
                 if (!state.activeChatId) return;
                 try {
                     const lastId = state.lastMessageId[state.activeChatId] || 0;
                     const newMessages = await apiFetch(`/api/messages/${state.activeChatId}?last_id=${lastId}`);
                     if (newMessages.length > 0) {
                         const messageListEl = document.getElementById('message-list');
-                        const isScrolledToBottom = messageListEl.scrollHeight - messageListEl.clientHeight <= messageListEl.scrollTop + 5; // 5px tolerance
-
+                        const isScrolledToBottom = messageListEl.scrollHeight - messageListEl.clientHeight <= messageListEl.scrollTop + 5;
                         newMessages.forEach(msg => {
                             if(!state.messages[state.activeChatId].some(m => m.id === msg.id)){
-                                state.messages[state.activeChatId].push(msg);
-                                appendMessage(msg, false); // append without scrolling
+                                state.messages[state.activeChatId].push(msg); appendMessage(msg, false);
                             }
                         });
                         state.lastMessageId[state.activeChatId] = newMessages[newMessages.length - 1].id;
-                        
-                        if (isScrolledToBottom) {
-                            messageListEl.scrollTop = messageListEl.scrollHeight;
-                        }
+                        if (isScrolledToBottom) { messageListEl.scrollTop = messageListEl.scrollHeight; }
                     }
-                } catch(error) {
-                    console.error("Message polling failed:", error);
-                }
+                } catch(error) { console.error("Message polling failed:", error); }
             }, 3000);
         }
 
         function startSyncing() {
             const savedQueue = localStorage.getItem('messageQueue');
             if (savedQueue) state.messageQueue = JSON.parse(savedQueue);
-            
             if(state.syncInterval) clearInterval(state.syncInterval);
             state.syncInterval = setInterval(async () => {
                 if (state.messageQueue.length === 0 || !state.activeChatId) return;
-                
                 const messagesToSend = state.messageQueue.filter(m => m.chat_id === state.activeChatId);
                 if (messagesToSend.length === 0) return;
                 const otherMessages = state.messageQueue.filter(m => m.chat_id !== state.activeChatId);
-
                 try {
-                    await apiFetch('/api/messages', {
-                        method: 'POST',
-                        body: JSON.stringify({ chat_id: state.activeChatId, messages: messagesToSend })
-                    });
+                    await apiFetch('/api/messages', { method: 'POST', body: JSON.stringify({ chat_id: state.activeChatId, messages: messagesToSend }) });
                     state.messageQueue = otherMessages;
                     localStorage.setItem('messageQueue', JSON.stringify(state.messageQueue));
-                } catch (error) {
-                    console.error("Failed to sync messages:", error);
-                }
+                } catch (error) { console.error("Failed to sync messages:", error); }
             }, 5000);
         }
 
-        document.getElementById('message-input-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            sendMessage();
-        });
-
-        document.getElementById('message-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+        document.getElementById('message-input-form').addEventListener('submit', (e) => { e.preventDefault(); sendMessage(); });
+        document.getElementById('message-input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
         
         async function sendMessage() {
-            if(!state.activeChatId) {
-                alert("Please select a chat first!");
-                return;
-            }
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            const fileInput = document.getElementById('file-input');
-            const file = fileInput.files[0];
-
+            if(!state.activeChatId) { alert("Please select a chat first!"); return; }
+            const input = document.getElementById('message-input'); const text = input.value.trim();
+            const fileInput = document.getElementById('file-input'); const file = fileInput.files[0];
             if (!text && !file) return;
-
             if (text.startsWith('/ai ')) {
-                const prompt = text.substring(4);
-                input.value = '';
+                const prompt = text.substring(4); input.value = '';
                 try {
                     const aiResponse = await apiFetch('/api/ai', { method: 'POST', body: JSON.stringify({ prompt }) });
-                    const aiMessage = {
-                        sender_username: "AI", content_type: "ai_response",
-                        text_content: aiResponse.response, timestamp: new Date().toISOString()
-                    };
-                    appendMessage(aiMessage);
-                } catch (error) { alert(`AI Error: ${error.message}`); }
-                return;
+                    appendMessage({ sender_username: "AI", content_type: "ai_response", text_content: aiResponse.response, timestamp: new Date().toISOString() });
+                } catch (error) { alert(`AI Error: ${error.message}`); } return;
             }
-
-            const message = {
-                chat_id: state.activeChatId, sender_username: state.currentUsername,
-                text_content: text, timestamp: new Date().toISOString()
-            };
-
+            const message = { chat_id: state.activeChatId, sender_username: state.currentUsername, text_content: text, timestamp: new Date().toISOString() };
             if (file) {
                 message.content_type = file.type.startsWith('image/') ? 'image' : 'file';
-                message.media_filename = file.name;
-                message.media_content = await fileToBase64(file);
+                message.media_filename = file.name; message.media_content = await fileToBase64(file);
                 message.media_data_url = URL.createObjectURL(file);
-            } else {
-                message.content_type = 'text';
-            }
-
+            } else { message.content_type = 'text'; }
             if (!state.messages[state.activeChatId]) state.messages[state.activeChatId] = [];
-            state.messages[state.activeChatId].push(message);
-            appendMessage(message);
-
-            const queueMessage = { ...message };
-            delete queueMessage.media_data_url;
+            state.messages[state.activeChatId].push(message); appendMessage(message);
+            const queueMessage = { ...message }; delete queueMessage.media_data_url;
             state.messageQueue.push(queueMessage);
             localStorage.setItem('messageQueue', JSON.stringify(state.messageQueue));
-
-            input.value = '';
-            fileInput.value = '';
+            input.value = ''; fileInput.value = '';
         }
         
         // --- MODALS and PROFILE PANEL ---
@@ -723,29 +596,19 @@
             const usernames = document.getElementById('new-chat-usernames').value.split(',').map(u => u.trim()).filter(Boolean);
             const groupName = document.getElementById('new-chat-group-name').value;
             try {
-                const result = await apiFetch('/api/chats/create', { 
-                    method: 'POST', body: JSON.stringify({ usernames, group_name: groupName })
-                });
-                await loadChats();
-                selectChat(result.chat_id);
-                hideNewChatModal();
+                const result = await apiFetch('/api/chats/create', { method: 'POST', body: JSON.stringify({ usernames, group_name: groupName }) });
+                await loadChats(); selectChat(result.chat_id); hideNewChatModal();
             } catch (error) { alert(`Error creating chat: ${error.message}`); }
         });
         
         document.getElementById('settings-form').addEventListener('submit', async(e) => {
             e.preventDefault();
-            const bio = document.getElementById('settings-bio').value;
-            const pfpFile = document.getElementById('settings-pfp').files[0];
-            let pfpB64 = null;
-            if(pfpFile) pfpB64 = await fileToBase64(pfpFile);
-
-            const payload = { bio };
-            if(pfpB64) payload.profile_picture = `data:image/png;base64,${pfpB64}`;
-
+            const bio = document.getElementById('settings-bio').value; const pfpFile = document.getElementById('settings-pfp').files[0];
+            let pfpB64 = null; if(pfpFile) pfpB64 = await fileToBase64(pfpFile);
+            const payload = { bio }; if(pfpB64) payload.profile_picture = `data:image/png;base64,${pfpB64}`;
             try {
                 await apiFetch('/api/profile', { method: 'PUT', body: JSON.stringify(payload) });
-                alert('Profile updated!');
-                hideSettingsModal();
+                alert('Profile updated!'); hideSettingsModal();
             } catch(error) { alert(`Error: ${error.message}`); }
         });
 
@@ -756,11 +619,81 @@
                 document.getElementById('profile-panel-bio').textContent = profile.bio || "No bio set.";
                 const avatar = document.getElementById('profile-panel-avatar');
                 avatar.src = profile.profile_picture ? `data:image/jpeg;base64,${profile.profile_picture}` : `https://api.dicebear.com/7.x/initials/svg?seed=${profile.username}`;
+                
+                // NEW: Show/hide "Start Chat" button
+                const startChatBtn = document.getElementById('start-chat-from-profile-btn');
+                if (username === state.currentUsername) {
+                    startChatBtn.classList.add('hidden');
+                } else {
+                    startChatBtn.classList.remove('hidden');
+                    startChatBtn.dataset.username = username; // Store username for the click handler
+                }
+
                 document.getElementById('profile-panel').classList.add('visible');
             } catch(error) { alert(`Could not load profile: ${error.message}`); }
         }
         function hideProfilePanel() { document.getElementById('profile-panel').classList.remove('visible'); }
+        
+        // --- NEW: USER SEARCH FUNCTIONALITY ---
+        function showUserSearchModal() { document.getElementById('user-search-modal').classList.remove('hidden'); }
+        function hideUserSearchModal() { document.getElementById('user-search-modal').classList.add('hidden'); }
 
+        document.getElementById('user-search-form').addEventListener('submit', e => e.preventDefault());
+        document.getElementById('user-search-input').addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            const resultsContainer = document.getElementById('user-search-results');
+            if (query.length < 2) {
+                resultsContainer.innerHTML = '<p style="color: var(--text-secondary); text-align:center;">Enter at least 2 characters to search.</p>';
+                return;
+            }
+            try {
+                resultsContainer.innerHTML = '<p style="color: var(--text-secondary); text-align:center;">Searching...</p>';
+                const users = await apiFetch(`/api/users/search?q=${query}`);
+                renderSearchResults(users);
+            } catch (error) {
+                resultsContainer.innerHTML = `<p style="color: var(--error-color); text-align:center;">Error: ${error.message}</p>`;
+            }
+        });
+
+        function renderSearchResults(users) {
+            const resultsContainer = document.getElementById('user-search-results');
+            resultsContainer.innerHTML = '';
+            if (users.length === 0) {
+                resultsContainer.innerHTML = '<p style="color: var(--text-secondary); text-align:center;">No users found.</p>';
+                return;
+            }
+            users.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.onclick = () => showUserProfileFromSearch(user.username);
+                const avatarSrc = user.profile_picture ? `data:image/png;base64,${user.profile_picture}` : `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`;
+                item.innerHTML = `
+                    <img src="${avatarSrc}" class="chat-avatar" style="width: 40px; height: 40px;">
+                    <span class="chat-name">${user.username}</span>`;
+                resultsContainer.appendChild(item);
+            });
+        }
+        
+        function showUserProfileFromSearch(username) {
+            hideUserSearchModal();
+            showUserProfile(username);
+        }
+
+        document.getElementById('start-chat-from-profile-btn').addEventListener('click', async (e) => {
+            const targetUsername = e.currentTarget.dataset.username;
+            if (!targetUsername) return;
+            try {
+                const result = await apiFetch('/api/chats/create', {
+                    method: 'POST',
+                    body: JSON.stringify({ usernames: [targetUsername] })
+                });
+                hideProfilePanel();
+                await loadChats();
+                selectChat(result.chat_id);
+            } catch (error) {
+                alert(`Could not start chat: ${error.message}`);
+            }
+        });
 
         // --- INITIALIZATION ---
         window.onload = () => {
