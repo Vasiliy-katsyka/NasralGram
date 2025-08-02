@@ -421,6 +421,40 @@ def ask_ai():
     except Exception as e:
         return jsonify({'error': f'Failed to generate content: {str(e)}'}), 500
 
+# =========================================================
+# NEW ROUTE FOR USER SEARCH
+# =========================================================
+@app.route('/api/users/search', methods=['GET'])
+@token_required
+def search_users():
+    query = request.args.get('q', '').strip()
+    if not query or len(query) < 2:
+        return jsonify([]) # Return empty if query is missing or too short
+
+    db = get_db()
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    # Search for usernames that contain the query string, case-insensitive
+    # Exclude the current user from the search results
+    search_pattern = f"%{query}%"
+    cur.execute(
+        "SELECT username, bio, profile_picture FROM users WHERE username ILIKE %s AND id != %s LIMIT 10",
+        (search_pattern, g.current_user['id'])
+    )
+    users = cur.fetchall()
+    cur.close()
+
+    results = []
+    for user in users:
+        results.append({
+            'username': user['username'],
+            'bio': user['bio'],
+            'profile_picture': base64.b64encode(user['profile_picture']).decode('utf-8') if user['profile_picture'] else None
+        })
+
+    return jsonify(results)
+# =========================================================
+
 
 if __name__ == '__main__':
     # The setup_database() call is no longer needed here
