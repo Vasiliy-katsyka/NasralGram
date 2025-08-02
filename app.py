@@ -9,10 +9,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, request, jsonify, g, send_from_directory
 from dotenv import load_dotenv
 import google.generativeai as genai
+from flask_cors import CORS
 
 # --- SETUP ---
 load_dotenv()
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "https://vasiliy-katsyka.github.io"}})
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
