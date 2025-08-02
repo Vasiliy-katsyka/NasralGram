@@ -3,135 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Messenger</title>
+    <title>NasralGram</title>
     <style>
         :root {
-            --bg-color: #1a1a1b; --primary-text: #d7dadc; --secondary-text: #818384;
-            --panel-bg: #272729; --hover-bg: #3a3a3c; --border-color: #343536;
-            --accent-color: #4f46e5; --accent-hover: #4338ca; --error-color: #ef4444;
+            --bg-primary: #121212;
+            --bg-secondary: #1E1E1E;
+            --bg-tertiary: #2A2A2A;
+            --bg-hover: #333333;
+            --text-primary: #E0E0E0;
+            --text-secondary: #A0A0A0;
+            --border-color: #383838;
+            --accent-primary: #6A35F4;
+            --accent-secondary: #8A5FF5;
+            --error-color: #EF4444;
+            --success-color: #22c55e;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
+
+        /* --- Base & Scrollbar --- */
+        * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0; background-color: var(--bg-color); color: var(--primary-text);
-            overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh;
+            font-family: var(--font-main);
+            margin: 0;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .hidden { display: none !important; }
-        /* Auth Views */
-        .auth-container { width: 320px; background: var(--panel-bg); padding: 2rem; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .auth-container h2 { text-align: center; margin-bottom: 1.5rem; }
-        .auth-container input { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--primary-text); border-radius: 4px; box-sizing: border-box; }
-        .auth-container button { width: 100%; padding: 0.75rem; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .auth-container button:hover { background: var(--accent-hover); }
-        .auth-container .switch-link { text-align: center; margin-top: 1rem; font-size: 0.9em; cursor: pointer; color: var(--secondary-text); }
-        .auth-container .error { color: var(--error-color); text-align: center; margin-bottom: 1rem; font-size: 0.9em; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        /* Main Chat App Layout */
-        #app-container { display: flex; width: 100%; height: 100%; max-width: 1400px; max-height: 900px; background: var(--panel-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        #side-panel { width: 300px; background: var(--bg-color); display: flex; flex-direction: column; border-right: 1px solid var(--border-color); }
-        #main-panel { flex-grow: 1; display: flex; flex-direction: column; }
-        #profile-panel { width: 320px; background: var(--bg-color); border-left: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+        /* --- Auth Page --- */
+        #auth-view {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: linear-gradient(135deg, #1e133b, #121212 50%);
+        }
+        .auth-container {
+            width: 90%; max-width: 400px; background: rgba(30, 30, 30, 0.7);
+            padding: 2.5rem; border-radius: 12px; backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
+        }
+        .auth-container h1 {
+            font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;
+            background: -webkit-linear-gradient(45deg, var(--accent-secondary), #fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .auth-container p { color: var(--text-secondary); margin-bottom: 2rem; }
+        .auth-container input {
+            width: 100%; padding: 1rem; margin-bottom: 1rem; background: var(--bg-tertiary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            border-radius: 8px; font-size: 1rem;
+        }
+        .auth-container button {
+            width: 100%; padding: 1rem; background: var(--accent-primary); color: white;
+            border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+        .auth-container button:hover { background: var(--accent-secondary); }
+        .auth-container .switch-link { margin-top: 1.5rem; cursor: pointer; color: var(--text-secondary); }
+        .auth-container .switch-link:hover { color: var(--accent-secondary); text-decoration: underline; }
+        .auth-container .error {
+            color: var(--error-color); background: rgba(239, 68, 68, 0.1);
+            text-align: center; margin-bottom: 1rem; padding: 0.75rem;
+            border-radius: 8px; font-size: 0.9em;
+        }
+
+        /* --- Main App Layout --- */
+        #app-container {
+            display: flex; width: 100%; height: 100%; max-width: 1600px;
+            background: var(--bg-secondary); overflow: hidden;
+            position: relative; /* For mobile view transitions */
+        }
+        #side-panel {
+            width: 320px; background: var(--bg-primary); display: flex;
+            flex-direction: column; border-right: 1px solid var(--border-color);
+            transition: transform 0.3s ease-in-out;
+        }
+        #main-panel { flex-grow: 1; display: flex; flex-direction: column; background: var(--bg-secondary); transition: transform 0.3s ease-in-out;}
         
-        /* Side Panel (Chat List) */
+        /* --- Side Panel (Chat List) --- */
         .side-panel-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
-        .side-panel-header h3 { margin: 0; }
-        .side-panel-header button { background: none; border: none; color: var(--primary-text); font-size: 1.5rem; cursor: pointer; }
+        .side-panel-header h3 { margin: 0; font-size: 1.2rem; }
+        .side-panel-header .header-buttons button { background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; margin-left: 0.5rem; padding: 0.25rem; transition: color 0.2s; }
+        .side-panel-header .header-buttons button:hover { color: var(--text-primary); }
         #chat-list { flex-grow: 1; overflow-y: auto; }
-        .chat-item { display: flex; align-items: center; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color); }
-        .chat-item:hover { background: var(--hover-bg); }
-        .chat-item.active { background: var(--accent-color); }
-        .chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--secondary-text); margin-right: 1rem; object-fit: cover; }
+        .chat-item { display: flex; align-items: center; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s; }
+        .chat-item:hover { background: var(--bg-hover); }
+        .chat-item.active { background: var(--accent-primary); }
+        .chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-tertiary); margin-right: 1rem; object-fit: cover; flex-shrink: 0; }
         .chat-info { flex-grow: 1; overflow: hidden; }
         .chat-name { font-weight: bold; white-space: nowrap; }
-        .chat-preview { font-size: 0.9em; color: var(--secondary-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-preview { font-size: 0.9em; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Main Panel (Chat View) */
-        .chat-header { padding: 1rem; display: flex; align-items: center; border-bottom: 1px solid var(--border-color); }
+        /* --- Main Panel (Chat View) --- */
+        .chat-header { padding: 1rem; display: flex; align-items: center; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--text-primary); font-size: 1.5rem; margin-right: 1rem; cursor: pointer; }
         .chat-header h4 { margin: 0; }
         #message-list { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
-        .message-input-area { padding: 1rem; border-top: 1px solid var(--border-color); display: flex; align-items: center; }
-        #message-input { flex-grow: 1; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--primary-text); padding: 0.75rem; border-radius: 20px; resize: none; }
-        #message-input-form button { background: var(--accent-color); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; margin-left: 0.5rem; cursor: pointer; font-size: 1.2rem; }
-        #file-input-label { cursor: pointer; padding: 0.5rem; margin-right: 0.5rem; }
+        .message-input-area { padding: 1rem; border-top: 1px solid var(--border-color); display: flex; align-items: center; background: var(--bg-secondary); }
+        #message-input-form { display: flex; flex-grow: 1; align-items: center; background: var(--bg-tertiary); border-radius: 24px; padding: 0.25rem 0.5rem; }
+        #message-input { flex-grow: 1; background: transparent; border: none; color: var(--text-primary); padding: 0.75rem; resize: none; outline: none; font-size: 1rem; }
+        #message-input-form button { background: var(--accent-primary); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; margin-left: 0.5rem; cursor: pointer; font-size: 1.2rem; flex-shrink: 0; transition: background-color 0.2s;}
+        #message-input-form button:hover { background: var(--accent-secondary); }
+        #file-input-label { cursor: pointer; padding: 0.5rem; margin-right: 0.5rem; font-size: 1.5rem; color: var(--text-secondary); transition: color 0.2s;}
+        #file-input-label:hover { color: var(--text-primary); }
 
-        /* Messages */
-        .message-container { display: flex; margin-bottom: 1rem; max-width: 70%; }
+        /* --- Messages --- */
+        .message-container { display: flex; margin-bottom: 1rem; max-width: 75%; align-items: flex-end;}
         .message-container.sent { margin-left: auto; flex-direction: row-reverse; }
-        .message-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--secondary-text); margin: 0 0.5rem; }
-        .message-bubble { background: var(--panel-bg); padding: 0.75rem; border-radius: 18px; }
-        .message-container.sent .message-bubble { background: var(--accent-color); color: white; }
-        .message-sender { font-weight: bold; font-size: 0.8em; margin-bottom: 0.25rem; }
-        .message-content img { max-width: 100%; border-radius: 12px; margin-top: 5px; }
+        .message-bubble { background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: 18px; }
+        .message-container.sent .message-bubble { background: var(--accent-primary); color: white; }
+        .message-sender { font-weight: bold; font-size: 0.8em; margin-bottom: 0.25rem; color: var(--accent-secondary); }
+        .message-container.sent .message-sender { display: none; }
+        .message-content img { max-width: 100%; border-radius: 12px; margin-top: 5px; cursor: pointer; }
         .message-content a { color: #8ab4f8; text-decoration: none; }
         .message-content a:hover { text-decoration: underline; }
-        .message-content.ai-response { border-left: 3px solid #fbbc05; padding-left: 10px; }
-        .timestamp { font-size: 0.7em; color: var(--secondary-text); margin-top: 4px; text-align: right; }
-        
-        /* Profile Panel */
-        #profile-panel-avatar { width: 128px; height: 128px; border-radius: 50%; background: var(--secondary-text); object-fit: cover; margin-bottom: 1rem; border: 2px solid var(--border-color); cursor: pointer; }
-        #profile-panel h3 { margin: 0 0 0.5rem 0; }
-        #profile-panel p { color: var(--secondary-text); text-align: center; }
-        #profile-panel .close-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--primary-text); font-size: 1.5rem; cursor: pointer; }
+        .message-content.ai-response { border-left: 3px solid #fbbc05; padding-left: 10px; background: rgba(251, 188, 5, 0.05); }
+        .timestamp { font-size: 0.7em; color: var(--text-secondary); margin-top: 4px; text-align: right; }
 
-        /* Modals */
-        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; }
-        .modal { background: var(--panel-bg); padding: 2rem; border-radius: 8px; width: 400px; }
+        /* --- Profile Panel --- */
+        #profile-panel {
+            width: 350px; background: var(--bg-primary); border-left: 1px solid var(--border-color);
+            padding: 2rem; display: flex; flex-direction: column; align-items: center;
+            position: absolute; right: 0; top: 0; height: 100%;
+            transform: translateX(100%); transition: transform 0.3s ease-in-out;
+            z-index: 100;
+        }
+        #profile-panel.visible { transform: translateX(0); }
+        #profile-panel-avatar { width: 128px; height: 128px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 2px solid var(--border-color); }
+        #profile-panel h3 { margin: 0 0 0.5rem 0; }
+        #profile-panel p { color: var(--text-secondary); text-align: center; }
+        .close-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; }
+
+        /* --- Modals --- */
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center;
+            align-items: center; z-index: 200; backdrop-filter: blur(5px);
+        }
+        .modal {
+            background: var(--bg-secondary); padding: 2rem; border-radius: 12px;
+            width: 90%; max-width: 450px; border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
         .modal h2 { margin-top: 0; }
-        .modal input, .modal textarea { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--primary-text); border-radius: 4px; box-sizing: border-box; }
-        .modal button { padding: 0.75rem 1.5rem; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 1rem; }
-        .modal .cancel-btn { background: var(--secondary-text); }
+        .modal input, .modal textarea {
+            width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--bg-primary);
+            border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;
+        }
+        .modal textarea { min-height: 80px; }
+        .modal .modal-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+        .modal button { padding: 0.6rem 1.2rem; background: var(--accent-primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 1rem; }
+        .modal .cancel-btn { background: var(--bg-tertiary); }
+
+        /* --- Responsive Design --- */
+        .hidden-desktop { display: none; }
+        @media (max-width: 900px) {
+            #profile-panel { width: 300px; }
+        }
+        @media (max-width: 768px) {
+            .hidden-mobile { display: none; }
+            .hidden-desktop { display: block; }
+            #app-container { flex-direction: column; }
+            #side-panel {
+                width: 100%; height: 100%; border-right: none;
+                position: absolute; transform: translateX(0); z-index: 20;
+            }
+            #main-panel {
+                width: 100%; height: 100%; position: absolute;
+                transform: translateX(100%); z-index: 30;
+            }
+            #app-container.chat-view-active #side-panel { transform: translateX(-100%); }
+            #app-container.chat-view-active #main-panel { transform: translateX(0); }
+
+            #profile-panel { width: 100%; z-index: 100; }
+            #profile-panel.visible { box-shadow: -10px 0 20px rgba(0,0,0,0.3); }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Login View -->
-    <div id="login-view" class="auth-container">
-        <h2>Login</h2>
-        <form id="login-form">
-            <div id="login-error" class="error hidden"></div>
-            <input type="text" id="login-username" placeholder="Username" required>
-            <input type="password" id="login-password" placeholder="Password" required>
-            <button type="submit">Log In</button>
-        </form>
-        <div class="switch-link" onclick="showView('register-view')">Don't have an account? Sign Up</div>
+    <!-- Auth View -->
+    <div id="auth-view">
+        <div class="auth-container">
+            <div id="login-view">
+                <h1>NasralGram</h1>
+                <p>Welcome back! Sign in to continue.</p>
+                <form id="login-form">
+                    <div id="login-error" class="error hidden"></div>
+                    <input type="text" id="login-username" placeholder="Username" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit">Log In</button>
+                </form>
+                <div class="switch-link" onclick="showAuthForm('register-view')">Don't have an account? Sign Up</div>
+            </div>
+
+            <div id="register-view" class="hidden">
+                <h1>NasralGram</h1>
+                <p>Start messaging now!</p>
+                <form id="register-form">
+                    <div id="register-error" class="error hidden"></div>
+                    <input type="text" id="register-username" placeholder="Username" required>
+                    <input type="password" id="register-password" placeholder="Password" required>
+                    <button type="submit">Create Account</button>
+                </form>
+                <div class="switch-link" onclick="showAuthForm('login-view')">Already have an account? Log In</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Register View -->
-    <div id="register-view" class="auth-container hidden">
-        <h2>Sign Up</h2>
-        <form id="register-form">
-            <div id="register-error" class="error hidden"></div>
-            <input type="text" id="register-username" placeholder="Username" required>
-            <input type="password" id="register-password" placeholder="Password" required>
-            <button type="submit">Create Account</button>
-        </form>
-        <div class="switch-link" onclick="showView('login-view')">Already have an account? Log In</div>
-    </div>
 
     <!-- Main App Container -->
     <div id="app-container" class="hidden">
         <div id="side-panel">
             <div class="side-panel-header">
                 <h3 id="current-username-display"></h3>
-                <button onclick="showNewChatModal()">+</button>
-                <button onclick="showSettingsModal()">⚙️</button>
+                <div class="header-buttons">
+                    <button onclick="showNewChatModal()" title="New Chat">➕</button>
+                    <button onclick="showSettingsModal()" title="Settings">⚙️</button>
+                </div>
             </div>
             <div id="chat-list"></div>
         </div>
         <div id="main-panel">
             <div class="chat-header">
-                <h4 id="chat-title">Select a chat</h4>
+                <button id="back-to-chats" class="back-btn hidden-desktop">←</button>
+                <h4 id="chat-title">Select a chat to start messaging</h4>
             </div>
             <div id="message-list"></div>
             <div class="message-input-area">
-                <label for="file-input" id="file-input-label" title="Attach file">📎</label>
-                <input type="file" id="file-input" class="hidden">
-                <form id="message-input-form" style="display: flex; flex-grow: 1;">
+                <form id="message-input-form">
+                    <label for="file-input" id="file-input-label" title="Attach file">📎</label>
+                    <input type="file" id="file-input" class="hidden">
                     <textarea id="message-input" rows="1" placeholder="Type a message..."></textarea>
-                    <button type="submit">➤</button>
+                    <button type="submit" title="Send">➤</button>
                 </form>
             </div>
         </div>
-        <div id="profile-panel" class="hidden">
+        <div id="profile-panel"> <!-- Initially hidden via transform -->
             <button class="close-btn" onclick="hideProfilePanel()">×</button>
             <img id="profile-panel-avatar" src="" alt="Profile Picture">
             <h3 id="profile-panel-username"></h3>
@@ -145,9 +263,11 @@
             <h2>New Chat</h2>
             <form id="new-chat-form">
                 <input type="text" id="new-chat-usernames" placeholder="Usernames (comma-separated)">
-                <input type="text" id="new-chat-group-name" placeholder="Group Name (optional)">
-                <button type="submit">Create Chat</button>
-                <button type="button" class="cancel-btn" onclick="hideNewChatModal()">Cancel</button>
+                <input type="text" id="new-chat-group-name" placeholder="Group Name (optional for groups)">
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="hideNewChatModal()">Cancel</button>
+                    <button type="submit">Create Chat</button>
+                </div>
             </form>
         </div>
     </div>
@@ -161,12 +281,13 @@
                 <textarea id="settings-bio" placeholder="Your bio..."></textarea>
                 <label for="settings-pfp">Update Profile Picture:</label>
                 <input type="file" id="settings-pfp" accept="image/*">
-                <br><br>
-                <button type="submit">Save Changes</button>
-                <button type="button" class="cancel-btn" onclick="hideSettingsModal()">Cancel</button>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="hideSettingsModal()">Cancel</button>
+                    <button type="submit">Save Changes</button>
+                </div>
             </form>
             <hr style="border-color: var(--border-color); margin: 2rem 0;">
-            <button onclick="logout()">Logout</button>
+            <button onclick="logout()" style="background-color: var(--error-color);">Logout</button>
         </div>
     </div>
 
@@ -187,8 +308,15 @@
 
         // --- UTILS & HELPERS ---
         function showView(viewId) {
-            document.querySelectorAll('.auth-container, #app-container').forEach(v => v.classList.add('hidden'));
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('app-container').classList.add('hidden');
             document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function showAuthForm(formId) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('register-view').classList.add('hidden');
+            document.getElementById(formId).classList.remove('hidden');
         }
 
         async function apiFetch(endpoint, options = {}) {
@@ -196,16 +324,32 @@
             if (state.token) {
                 headers['x-access-token'] = state.token;
             }
-            const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-            if (!response.ok) {
-                if (response.status === 401) logout();
-                const error = await response.json();
-                throw new Error(error.message || 'API request failed');
-            }
-            // some endpoints might not return json (e.g. 201 no content)
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                return response.json();
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+                
+                const contentType = response.headers.get("content-type");
+                let data;
+                
+                if (contentType && contentType.includes("application/json")) {
+                    data = await response.json();
+                } else {
+                    const textData = await response.text();
+                    if (!response.ok) {
+                        console.error("Non-JSON error response from server:", textData);
+                        throw new Error(`Server returned an error. Check console for details. (Status: ${response.status})`);
+                    }
+                    return textData; // For successful non-json responses
+                }
+
+                if (!response.ok) {
+                    if (response.status === 401) logout();
+                    throw new Error(data.message || 'An unknown API error occurred.');
+                }
+                return data;
+            } catch (error) {
+                // Catches network errors and errors thrown from above
+                console.error(`API Fetch Error for endpoint ${endpoint}:`, error);
+                throw error; // Re-throw to be caught by the calling function
             }
         }
 
@@ -218,20 +362,14 @@
             });
         }
         
-        function dataURLtoBlob(dataurl) {
-            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-            return new Blob([u8arr], {type:mime});
-        }
-
-
         // --- AUTH ---
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
             try {
+                errorEl.classList.add('hidden');
                 const data = await apiFetch('/login', {
                     method: 'POST',
                     body: JSON.stringify({ username, password })
@@ -240,10 +378,10 @@
                 state.currentUsername = data.username;
                 localStorage.setItem('authToken', data.token);
                 localStorage.setItem('username', data.username);
-                awaitinitializeApp();
+                await initializeApp();
             } catch (error) {
-                document.getElementById('login-error').textContent = error.message;
-                document.getElementById('login-error').classList.remove('hidden');
+                errorEl.textContent = error.message;
+                errorEl.classList.remove('hidden');
             }
         });
 
@@ -251,40 +389,43 @@
             e.preventDefault();
             const username = document.getElementById('register-username').value;
             const password = document.getElementById('register-password').value;
+            const errorEl = document.getElementById('register-error');
             try {
+                errorEl.classList.add('hidden');
                 await apiFetch('/register', {
                     method: 'POST',
                     body: JSON.stringify({ username, password })
                 });
                 alert('Registration successful! Please log in.');
-                showView('login-view');
+                showAuthForm('login-view');
             } catch (error) {
-                document.getElementById('register-error').textContent = error.message;
-                document.getElementById('register-error').classList.remove('hidden');
+                errorEl.textContent = error.message;
+                errorEl.classList.remove('hidden');
             }
         });
         
         function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('username');
-            state = { token: null, currentUsername: null, activeChatId: null, chats: [], messages: {}, lastMessageId: {} };
+            localStorage.clear();
+            state = { token: null, currentUsername: null, activeChatId: null, chats: [], messages: {}, lastMessageId: {}, messageQueue: [] };
             clearInterval(state.pollingInterval);
             clearInterval(state.syncInterval);
-            showView('login-view');
+            showView('auth-view');
+            showAuthForm('login-view');
+            document.getElementById('app-container').classList.remove('chat-view-active');
         }
 
         // --- RENDERING ---
         function renderChatList() {
             const chatListEl = document.getElementById('chat-list');
             chatListEl.innerHTML = '';
-            state.chats.sort((a,b) => new Date(b.last_message_time) - new Date(a.last_message_time));
+            state.chats.sort((a,b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0));
             state.chats.forEach(chat => {
                 const item = document.createElement('div');
                 item.className = 'chat-item';
                 if (chat.id === state.activeChatId) item.classList.add('active');
                 item.onclick = () => selectChat(chat.id);
                 
-                const avatarSrc = chat.profile_picture ? `data:image/png;base64,${chat.profile_picture}` : 'https://via.placeholder.com/48';
+                const avatarSrc = chat.profile_picture ? `data:image/png;base64,${chat.profile_picture}` : `https://api.dicebear.com/7.x/initials/svg?seed=${chat.name}`;
                 
                 item.innerHTML = `
                     <img src="${avatarSrc}" class="chat-avatar">
@@ -303,12 +444,12 @@
             messageListEl.innerHTML = '';
             const messages = state.messages[state.activeChatId] || [];
             messages.forEach(msg => {
-                appendMessage(msg);
+                appendMessage(msg, false); // don't scroll for each message
             });
             messageListEl.scrollTop = messageListEl.scrollHeight;
         }
 
-        function appendMessage(msg) {
+        function appendMessage(msg, scroll = true) {
             const messageListEl = document.getElementById('message-list');
             const container = document.createElement('div');
             container.className = 'message-container';
@@ -325,18 +466,23 @@
                  contentHTML = `<div class="message-content ai-response"><b>AI Response:</b><br>${parseMentions(msg.text_content)}</div>`;
             }
             
+            const senderHTML = msg.sender_username === state.currentUsername ? '' : `<div class="message-sender" onclick="showUserProfile('${msg.sender_username}')">${msg.sender_username}</div>`;
+
             container.innerHTML = `
                 <div class="message-bubble">
-                    <div class="message-sender">${msg.sender_username}</div>
+                    ${senderHTML}
                     ${contentHTML}
                     <div class="timestamp">${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
             `;
             messageListEl.appendChild(container);
+            if (scroll) messageListEl.scrollTop = messageListEl.scrollHeight;
         }
         
         function parseMentions(text) {
-            return text.replace(/@(\w+)/g, '<a href="#" onclick="showUserProfile(\'$1\')">@$1</a>');
+            // Sanitize text before inserting to prevent XSS from @mentions
+            const sanitizedText = text.replace(/</g, "<").replace(/>/g, ">");
+            return sanitizedText.replace(/@(\w+)/g, '<a href="#" onclick="event.preventDefault(); showUserProfile(\'$1\')">@$1</a>');
         }
 
         // --- CORE APP LOGIC ---
@@ -351,32 +497,47 @@
         
         async function loadChats() {
             try {
-                state.chats = await apiFetch('/api/chats');
-                renderChatList();
+                const newChats = await apiFetch('/api/chats');
+                // A simple check to see if we need to re-render
+                if(JSON.stringify(state.chats) !== JSON.stringify(newChats)){
+                    state.chats = newChats;
+                    renderChatList();
+                }
             } catch (error) {
                 console.error("Failed to load chats:", error);
             }
         }
         
         async function selectChat(chatId) {
+            if (state.activeChatId === chatId) return;
             state.activeChatId = chatId;
             renderChatList(); // To update active highlight
+            document.getElementById('app-container').classList.add('chat-view-active');
             
             const chat = state.chats.find(c => c.id === chatId);
             document.getElementById('chat-title').textContent = chat.name;
             
-            // Load initial messages if not already loaded
             if (!state.messages[chatId]) {
                 state.messages[chatId] = [];
                 state.lastMessageId[chatId] = 0;
-                const messages = await apiFetch(`/api/messages/${chatId}`);
-                state.messages[chatId] = messages;
-                if(messages.length > 0) {
-                    state.lastMessageId[chatId] = messages[messages.length - 1].id;
+                try {
+                    const messages = await apiFetch(`/api/messages/${chatId}`);
+                    state.messages[chatId] = messages;
+                    if(messages.length > 0) {
+                        state.lastMessageId[chatId] = messages[messages.length - 1].id;
+                    }
+                } catch(e){
+                     console.error(`Failed to load messages for chat ${chatId}`, e);
                 }
             }
             renderMessages();
         }
+
+        document.getElementById('back-to-chats').addEventListener('click', () => {
+            document.getElementById('app-container').classList.remove('chat-view-active');
+            state.activeChatId = null;
+            renderChatList(); // un-highlight
+        });
 
         function startPolling() {
             if (state.pollingInterval) clearInterval(state.pollingInterval);
@@ -386,50 +547,49 @@
                     const lastId = state.lastMessageId[state.activeChatId] || 0;
                     const newMessages = await apiFetch(`/api/messages/${state.activeChatId}?last_id=${lastId}`);
                     if (newMessages.length > 0) {
-                        state.messages[state.activeChatId].push(...newMessages);
+                        const messageListEl = document.getElementById('message-list');
+                        const isScrolledToBottom = messageListEl.scrollHeight - messageListEl.clientHeight <= messageListEl.scrollTop + 1;
+
+                        newMessages.forEach(msg => {
+                            state.messages[state.activeChatId].push(msg);
+                            appendMessage(msg, false); // append without scrolling
+                        });
                         state.lastMessageId[state.activeChatId] = newMessages[newMessages.length - 1].id;
-                        renderMessages(); // Could be optimized to only append
+                        if (isScrolledToBottom) {
+                            messageListEl.scrollTop = messageListEl.scrollHeight;
+                        }
                     }
                 } catch(error) {
                     console.error("Polling failed:", error);
                 }
                 
-                // Also poll chat list for updates
                 await loadChats();
-
-            }, 3000); // Poll every 3 seconds
+            }, 3000);
         }
 
         function startSyncing() {
-            // Load from localStorage first
             const savedQueue = localStorage.getItem('messageQueue');
-            if (savedQueue) {
-                state.messageQueue = JSON.parse(savedQueue);
-            }
-
+            if (savedQueue) state.messageQueue = JSON.parse(savedQueue);
+            
             if(state.syncInterval) clearInterval(state.syncInterval);
             state.syncInterval = setInterval(async () => {
-                if (state.messageQueue.length === 0) return;
+                if (state.messageQueue.length === 0 || !state.activeChatId) return;
                 
-                // We only sync messages for the currently active chat
                 const messagesToSend = state.messageQueue.filter(m => m.chat_id === state.activeChatId);
                 if (messagesToSend.length === 0) return;
+                const otherMessages = state.messageQueue.filter(m => m.chat_id !== state.activeChatId);
 
                 try {
                     await apiFetch('/api/messages', {
                         method: 'POST',
                         body: JSON.stringify({ chat_id: state.activeChatId, messages: messagesToSend })
                     });
-                    // Success, clear the sent messages from queue
-                    state.messageQueue = state.messageQueue.filter(m => m.chat_id !== state.activeChatId);
+                    state.messageQueue = otherMessages;
                     localStorage.setItem('messageQueue', JSON.stringify(state.messageQueue));
-                    console.log("Batch sent to server.");
                 } catch (error) {
                     console.error("Failed to sync messages:", error);
-                    // Don't clear queue, will retry next interval
                 }
-
-            }, 5000); // Sync every 5 seconds
+            }, 5000);
         }
 
         document.getElementById('message-input-form').addEventListener('submit', (e) => {
@@ -445,6 +605,10 @@
         });
         
         async function sendMessage() {
+            if(!state.activeChatId) {
+                alert("Please select a chat first!");
+                return;
+            }
             const input = document.getElementById('message-input');
             const text = input.value.trim();
             const fileInput = document.getElementById('file-input');
@@ -452,57 +616,43 @@
 
             if (!text && !file) return;
 
-            // Handle AI command
             if (text.startsWith('/ai ')) {
                 const prompt = text.substring(4);
                 input.value = '';
                 try {
                     const aiResponse = await apiFetch('/api/ai', { method: 'POST', body: JSON.stringify({ prompt }) });
                     const aiMessage = {
-                        sender_username: "AI",
-                        content_type: "ai_response",
-                        text_content: aiResponse.response,
-                        timestamp: new Date().toISOString()
+                        sender_username: "AI", content_type: "ai_response",
+                        text_content: aiResponse.response, timestamp: new Date().toISOString()
                     };
                     appendMessage(aiMessage);
-                    document.getElementById('message-list').scrollTop = document.getElementById('message-list').scrollHeight;
-                } catch (error) {
-                    alert(`AI Error: ${error.message}`);
-                }
+                } catch (error) { alert(`AI Error: ${error.message}`); }
                 return;
             }
 
             const message = {
-                chat_id: state.activeChatId,
-                sender_username: state.currentUsername,
-                text_content: text,
-                timestamp: new Date().toISOString()
+                chat_id: state.activeChatId, sender_username: state.currentUsername,
+                text_content: text, timestamp: new Date().toISOString()
             };
 
             if (file) {
                 message.content_type = file.type.startsWith('image/') ? 'image' : 'file';
                 message.media_filename = file.name;
                 message.media_content = await fileToBase64(file);
-                
-                // For optimistic update, create a local URL for the image
                 message.media_data_url = URL.createObjectURL(file);
             } else {
                 message.content_type = 'text';
             }
 
-            // 1. Optimistic Update: Show message immediately
             if (!state.messages[state.activeChatId]) state.messages[state.activeChatId] = [];
             state.messages[state.activeChatId].push(message);
             appendMessage(message);
-            document.getElementById('message-list').scrollTop = document.getElementById('message-list').scrollHeight;
 
-            // 2. Add to sync queue (without local data_url)
             const queueMessage = { ...message };
             delete queueMessage.media_data_url;
             state.messageQueue.push(queueMessage);
             localStorage.setItem('messageQueue', JSON.stringify(state.messageQueue));
 
-            // 3. Clear inputs
             input.value = '';
             fileInput.value = '';
         }
@@ -510,29 +660,27 @@
         // --- MODALS and PROFILE PANEL ---
         function showNewChatModal() { document.getElementById('new-chat-modal').classList.remove('hidden'); }
         function hideNewChatModal() { document.getElementById('new-chat-modal').classList.add('hidden'); }
-        function showSettingsModal() { 
-            apiFetch('/api/profile').then(profile => {
+        async function showSettingsModal() { 
+            try {
+                const profile = await apiFetch('/api/profile');
                 document.getElementById('settings-bio').value = profile.bio || '';
                 document.getElementById('settings-modal').classList.remove('hidden'); 
-            });
+            } catch(e) { alert("Could not load your profile."); }
         }
         function hideSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
         
         document.getElementById('new-chat-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const usernames = document.getElementById('new-chat-usernames').value.split(',').map(u => u.trim());
+            const usernames = document.getElementById('new-chat-usernames').value.split(',').map(u => u.trim()).filter(Boolean);
             const groupName = document.getElementById('new-chat-group-name').value;
             try {
                 const result = await apiFetch('/api/chats/create', { 
-                    method: 'POST', 
-                    body: JSON.stringify({ usernames, group_name: groupName })
+                    method: 'POST', body: JSON.stringify({ usernames, group_name: groupName })
                 });
                 await loadChats();
                 selectChat(result.chat_id);
                 hideNewChatModal();
-            } catch (error) {
-                alert(`Error creating chat: ${error.message}`);
-            }
+            } catch (error) { alert(`Error creating chat: ${error.message}`); }
         });
         
         document.getElementById('settings-form').addEventListener('submit', async(e) => {
@@ -540,20 +688,16 @@
             const bio = document.getElementById('settings-bio').value;
             const pfpFile = document.getElementById('settings-pfp').files[0];
             let pfpB64 = null;
-            if(pfpFile) {
-                pfpB64 = await fileToBase64(pfpFile);
-            }
+            if(pfpFile) pfpB64 = await fileToBase64(pfpFile);
+
+            const payload = { bio };
+            if(pfpB64) payload.profile_picture = `data:image/png;base64,${pfpB64}`;
 
             try {
-                await apiFetch('/api/profile', {
-                    method: 'PUT',
-                    body: JSON.stringify({ bio, profile_picture: pfpB64 ? `data:image/png;base64,${pfpB64}` : null })
-                });
+                await apiFetch('/api/profile', { method: 'PUT', body: JSON.stringify(payload) });
                 alert('Profile updated!');
                 hideSettingsModal();
-            } catch(error) {
-                alert(`Error: ${error.message}`);
-            }
+            } catch(error) { alert(`Error: ${error.message}`); }
         });
 
         async function showUserProfile(username) {
@@ -562,13 +706,11 @@
                 document.getElementById('profile-panel-username').textContent = profile.username;
                 document.getElementById('profile-panel-bio').textContent = profile.bio || "No bio set.";
                 const avatar = document.getElementById('profile-panel-avatar');
-                avatar.src = profile.profile_picture ? `data:image/jpeg;base64,${profile.profile_picture}` : 'https://via.placeholder.com/128';
-                document.getElementById('profile-panel').classList.remove('hidden');
-            } catch(error) {
-                alert(`Could not load profile: ${error.message}`);
-            }
+                avatar.src = profile.profile_picture ? `data:image/jpeg;base64,${profile.profile_picture}` : `https://api.dicebear.com/7.x/initials/svg?seed=${profile.username}`;
+                document.getElementById('profile-panel').classList.add('visible');
+            } catch(error) { alert(`Could not load profile: ${error.message}`); }
         }
-        function hideProfilePanel() { document.getElementById('profile-panel').classList.add('hidden'); }
+        function hideProfilePanel() { document.getElementById('profile-panel').classList.remove('visible'); }
 
 
         // --- INITIALIZATION ---
@@ -578,10 +720,9 @@
             if (state.token && state.currentUsername) {
                 initializeApp();
             } else {
-                showView('login-view');
+                showView('auth-view');
             }
         };
-
     </script>
 </body>
-                  </html>
+</html>
