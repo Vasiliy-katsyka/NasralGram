@@ -13,23 +13,25 @@
             --text-primary: #E0E0E0;
             --text-secondary: #A0A0A0;
             --border-color: #383838;
-            --accent-primary: #6A35F4;
-            --accent-secondary: #8A5FF5;
-            --error-color: #EF4444;
+            --accent-primary: #7c3aed; /* Violet */
+            --accent-secondary: #a78bfa; /* Lighter Violet */
+            --error-color: #f43f5e; /* Rose */
             --success-color: #22c55e;
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         /* --- Base & Scrollbar --- */
         * { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
         body {
             font-family: var(--font-main);
             margin: 0;
             background-color: var(--bg-primary);
             color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -40,41 +42,57 @@
         ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        /* --- Auth Page --- */
+        /* --- Auth Page Redesign --- */
         #auth-view {
             width: 100%; height: 100%; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            background: linear-gradient(135deg, #1e133b, #121212 50%);
+            background: #121212;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0);
+            background-size: 20px 20px;
+            animation: move-bg 10s linear infinite;
+        }
+        @keyframes move-bg {
+            from { background-position: 0 0; }
+            to { background-position: 40px 40px; }
         }
         .auth-container {
-            width: 90%; max-width: 400px; background: rgba(30, 30, 30, 0.7);
-            padding: 2.5rem; border-radius: 12px; backdrop-filter: blur(10px);
+            width: 90%; max-width: 400px; background: rgba(30, 30, 30, 0.85);
+            padding: 2.5rem; border-radius: 16px; backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;
         }
         .auth-container h1 {
-            font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;
+            font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;
             background: -webkit-linear-gradient(45deg, var(--accent-secondary), #fff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .auth-container p { color: var(--text-secondary); margin-bottom: 2rem; }
-        .auth-container input {
+        .auth-container .input-field {
             width: 100%; padding: 1rem; margin-bottom: 1rem; background: var(--bg-tertiary);
             border: 1px solid var(--border-color); color: var(--text-primary);
             border-radius: 8px; font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .auth-container button {
+        .auth-container .input-field:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+        }
+        .auth-container .auth-button {
             width: 100%; padding: 1rem; background: var(--accent-primary); color: white;
             border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
-        .auth-container button:hover { background: var(--accent-secondary); }
-        .auth-container .switch-link { margin-top: 1.5rem; cursor: pointer; color: var(--text-secondary); }
-        .auth-container .switch-link:hover { color: var(--accent-secondary); text-decoration: underline; }
+        .auth-container .auth-button:hover { background: var(--accent-secondary); }
+        .auth-container .auth-button:active { transform: scale(0.98); }
+        .auth-container .switch-link { margin-top: 1.5rem; cursor: pointer; color: var(--text-secondary); font-size: 0.9em; }
+        .auth-container .switch-link span { color: var(--accent-secondary); text-decoration: none; font-weight: 500;}
+        .auth-container .switch-link:hover span { text-decoration: underline; }
         .auth-container .error {
-            color: var(--error-color); background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color); background: rgba(244, 63, 94, 0.1);
             text-align: center; margin-bottom: 1rem; padding: 0.75rem;
             border-radius: 8px; font-size: 0.9em;
+            border: 1px solid rgba(244, 63, 94, 0.3);
         }
 
         /* --- Main App Layout --- */
@@ -195,28 +213,34 @@
     <!-- Auth View -->
     <div id="auth-view">
         <div class="auth-container">
-            <div id="login-view">
+            <!-- Register View (Default) -->
+            <div id="register-view">
+                <h1>NasralGram</h1>
+                <p>Create an account to start messaging.</p>
+                <form id="register-form">
+                    <div id="register-error" class="error hidden"></div>
+                    <input type="text" id="register-username" class="input-field" placeholder="Username" required>
+                    <input type="password" id="register-password" class="input-field" placeholder="Password" required>
+                    <button type="submit" class="auth-button">Create Account & Enter</button>
+                </form>
+                <div class="switch-link" onclick="showAuthForm('login-view')">
+                    Already have an account? <span>Log In</span>
+                </div>
+            </div>
+
+            <!-- Login View -->
+            <div id="login-view" class="hidden">
                 <h1>NasralGram</h1>
                 <p>Welcome back! Sign in to continue.</p>
                 <form id="login-form">
                     <div id="login-error" class="error hidden"></div>
-                    <input type="text" id="login-username" placeholder="Username" required>
-                    <input type="password" id="login-password" placeholder="Password" required>
-                    <button type="submit">Log In</button>
+                    <input type="text" id="login-username" class="input-field" placeholder="Username" required>
+                    <input type="password" id="login-password" class="input-field" placeholder="Password" required>
+                    <button type="submit" class="auth-button">Log In</button>
                 </form>
-                <div class="switch-link" onclick="showAuthForm('register-view')">Don't have an account? Sign Up</div>
-            </div>
-
-            <div id="register-view" class="hidden">
-                <h1>NasralGram</h1>
-                <p>Start messaging now!</p>
-                <form id="register-form">
-                    <div id="register-error" class="error hidden"></div>
-                    <input type="text" id="register-username" placeholder="Username" required>
-                    <input type="password" id="register-password" placeholder="Password" required>
-                    <button type="submit">Create Account</button>
-                </form>
-                <div class="switch-link" onclick="showAuthForm('login-view')">Already have an account? Log In</div>
+                <div class="switch-link" onclick="showAuthForm('register-view')">
+                    Don't have an account? <span>Sign Up</span>
+                </div>
             </div>
         </div>
     </div>
@@ -390,14 +414,28 @@
             const username = document.getElementById('register-username').value;
             const password = document.getElementById('register-password').value;
             const errorEl = document.getElementById('register-error');
+            errorEl.classList.add('hidden');
+
             try {
-                errorEl.classList.add('hidden');
+                // Step 1: Register the user
                 await apiFetch('/register', {
                     method: 'POST',
                     body: JSON.stringify({ username, password })
                 });
-                alert('Registration successful! Please log in.');
-                showAuthForm('login-view');
+
+                // Step 2: Automatically log in the user with the same credentials
+                const data = await apiFetch('/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                // Step 3: Store credentials and initialize the app
+                state.token = data.token;
+                state.currentUsername = data.username;
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('username', data.username);
+                await initializeApp();
+
             } catch (error) {
                 errorEl.textContent = error.message;
                 errorEl.classList.remove('hidden');
@@ -410,7 +448,7 @@
             clearInterval(state.pollingInterval);
             clearInterval(state.syncInterval);
             showView('auth-view');
-            showAuthForm('login-view');
+            showAuthForm('register-view'); // Default to register view on logout
             document.getElementById('app-container').classList.remove('chat-view-active');
         }
 
@@ -490,9 +528,14 @@
             showView('app-container');
             document.getElementById('current-username-display').textContent = state.currentUsername;
             
-            await loadChats();
-            startPolling();
-            startSyncing();
+            try {
+                await loadChats();
+                startPolling();
+                startSyncing();
+            } catch (error) {
+                console.error("Critical error during app initialization:", error);
+                alert("Could not initialize the app. Please try refreshing the page.");
+            }
         }
         
         async function loadChats() {
@@ -505,6 +548,7 @@
                 }
             } catch (error) {
                 console.error("Failed to load chats:", error);
+                // Don't rethrow here, allow the app to run without initial chats
             }
         }
         
@@ -542,28 +586,33 @@
         function startPolling() {
             if (state.pollingInterval) clearInterval(state.pollingInterval);
             state.pollingInterval = setInterval(async () => {
+                // Poll for chats to see new messages/chats from anyone
+                await loadChats();
+
+                // Poll for messages in the active chat
                 if (!state.activeChatId) return;
                 try {
                     const lastId = state.lastMessageId[state.activeChatId] || 0;
                     const newMessages = await apiFetch(`/api/messages/${state.activeChatId}?last_id=${lastId}`);
                     if (newMessages.length > 0) {
                         const messageListEl = document.getElementById('message-list');
-                        const isScrolledToBottom = messageListEl.scrollHeight - messageListEl.clientHeight <= messageListEl.scrollTop + 1;
+                        const isScrolledToBottom = messageListEl.scrollHeight - messageListEl.clientHeight <= messageListEl.scrollTop + 5; // 5px tolerance
 
                         newMessages.forEach(msg => {
-                            state.messages[state.activeChatId].push(msg);
-                            appendMessage(msg, false); // append without scrolling
+                            if(!state.messages[state.activeChatId].some(m => m.id === msg.id)){
+                                state.messages[state.activeChatId].push(msg);
+                                appendMessage(msg, false); // append without scrolling
+                            }
                         });
                         state.lastMessageId[state.activeChatId] = newMessages[newMessages.length - 1].id;
+                        
                         if (isScrolledToBottom) {
                             messageListEl.scrollTop = messageListEl.scrollHeight;
                         }
                     }
                 } catch(error) {
-                    console.error("Polling failed:", error);
+                    console.error("Message polling failed:", error);
                 }
-                
-                await loadChats();
             }, 3000);
         }
 
