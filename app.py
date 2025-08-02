@@ -14,6 +14,9 @@ from flask_cors import CORS
 # --- SETUP ---
 load_dotenv()
 app = Flask(__name__)
+# To aid local development, you could expand origins, e.g.:
+# origins = ["https://vasiliy-katsyka.github.io", "http://127.0.0.1:5500", "null"]
+# CORS(app, resources={r"/*": {"origins": origins}})
 CORS(app, resources={r"/*": {"origins": "https://vasiliy-katsyka.github.io"}})
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
