@@ -40,8 +40,6 @@ def close_db(e=None):
         db.close()
 
 def setup_database():
-    # This function now connects and closes its own DB connection
-    # to be a self-contained, one-off setup task.
     print("Attempting to connect to the database for setup...")
     db = psycopg2.connect(DATABASE_URL)
     print("Database connection successful. Setting up tables...")
@@ -88,12 +86,8 @@ def setup_database():
     db.close()
     print("Database tables checked/created successfully.")
 
-# ======================================================================
-#  THE FIX IS HERE: Call setup_database() when the app module is loaded
-# ======================================================================
 with app.app_context():
     setup_database()
-# ======================================================================
 
 # --- MIDDLEWARE & AUTH ---
 def token_required(f):
@@ -139,7 +133,7 @@ def register():
         )
         db.commit()
     except psycopg2.IntegrityError:
-        db.rollback() # Good practice to rollback on error
+        db.rollback()
         return jsonify({'message': 'Username already exists'}), 409
     except Exception as e:
         db.rollback()
@@ -171,6 +165,33 @@ def login():
     }, app.config['SECRET_KEY'], algorithm="HS256")
 
     return jsonify({'token': token, 'username': user['username']})
+
+@app.route('/api/users/search', methods=['GET'])
+@token_required
+def search_users():
+    query = request.args.get('q', '').strip()
+    if not query or len(query) < 2:
+        return jsonify([])
+
+    db = get_db()
+    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    search_pattern = f"%{query}%"
+    cur.execute(
+        "SELECT username, bio, profile_picture FROM users WHERE username ILIKE %s AND id != %s LIMIT 10",
+        (search_pattern, g.current_user['id'])
+    )
+    users = cur.fetchall()
+    cur.close()
+
+    results = []
+    for user in users:
+        results.append({
+            'username': user['username'],
+            'bio': user['bio'],
+            'profile_picture': base64.b64encode(user['profile_picture']).decode('utf-8') if user['profile_picture'] else None
+        })
+    return jsonify(results)
 
 @app.route('/api/profile', methods=['GET'])
 @token_required
@@ -207,11 +228,10 @@ def get_user_profile(username):
 def update_profile():
     data = request.get_json()
     bio = data.get('bio')
-    profile_picture_b64 = data.get('profile_picture') # Expect base64 string
+    profile_picture_b64 = data.get('profile_picture')
     
     picture_data = None
     if profile_picture_b64:
-        # The base64 string might contain a data URL header, remove it
         if ',' in profile_picture_b64:
             profile_picture_b64 = profile_picture_b64.split(',')[1]
         try:
@@ -299,17 +319,29 @@ def create_chat():
         missing_users = [u for u in all_users if u not in found_users]
         return jsonify({'message': f'Users not found: {", ".join(missing_users)}'}), 404
     
+    # Get the ID of the other user for 1-on-1 chat checks
+    other_user_id = None
+    if len(participants) == 2:
+        other_user = next((p for p in participants if p['id'] != g.current_user['id']), None)
+        if other_user:
+            other_user_id = other_user['id']
+
     participant_ids = [p['id'] for p in participants]
     is_group = len(participant_ids) > 2
 
-    if not is_group and len(participant_ids) == 2:
+    # For 1-on-1, check if chat already exists
+    if not is_group and other_user_id:
+        # =========================================================
+        # THE FIX IS HERE: We specify `cp1.chat_id`
+        # =========================================================
         cur.execute("""
-            SELECT chat_id FROM chat_participants cp1
+            SELECT cp1.chat_id FROM chat_participants cp1
             JOIN chat_participants cp2 ON cp1.chat_id = cp2.chat_id
             WHERE cp1.user_id = %s AND cp2.user_id = %s AND (
                 SELECT is_group FROM chats WHERE id = cp1.chat_id
             ) = FALSE
-        """, (g.current_user['id'], participant_ids[1]))
+        """, (g.current_user['id'], other_user_id))
+        # =========================================================
         existing_chat = cur.fetchone()
         if existing_chat:
             return jsonify({'message': 'Chat already exists', 'chat_id': existing_chat['chat_id']}), 200
@@ -421,41 +453,6 @@ def ask_ai():
     except Exception as e:
         return jsonify({'error': f'Failed to generate content: {str(e)}'}), 500
 
-# =========================================================
-# NEW ROUTE FOR USER SEARCH
-# =========================================================
-@app.route('/api/users/search', methods=['GET'])
-@token_required
-def search_users():
-    query = request.args.get('q', '').strip()
-    if not query or len(query) < 2:
-        return jsonify([]) # Return empty if query is missing or too short
-
-    db = get_db()
-    cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    
-    # Search for usernames that contain the query string, case-insensitive
-    # Exclude the current user from the search results
-    search_pattern = f"%{query}%"
-    cur.execute(
-        "SELECT username, bio, profile_picture FROM users WHERE username ILIKE %s AND id != %s LIMIT 10",
-        (search_pattern, g.current_user['id'])
-    )
-    users = cur.fetchall()
-    cur.close()
-
-    results = []
-    for user in users:
-        results.append({
-            'username': user['username'],
-            'bio': user['bio'],
-            'profile_picture': base64.b64encode(user['profile_picture']).decode('utf-8') if user['profile_picture'] else None
-        })
-
-    return jsonify(results)
-# =========================================================
-
 
 if __name__ == '__main__':
-    # The setup_database() call is no longer needed here
     app.run(debug=True, port=5001)
