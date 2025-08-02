@@ -5,3 +5,4 @@ werkzeug
 google-generativeai
 python-dotenv
 gunicorn
+Flask-CORS
