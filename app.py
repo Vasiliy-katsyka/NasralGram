@@ -14,9 +14,6 @@ from flask_cors import CORS
 # --- SETUP ---
 load_dotenv()
 app = Flask(__name__)
-# To aid local development, you could expand origins, e.g.:
-# origins = ["https://vasiliy-katsyka.github.io", "http://127.0.0.1:5500", "null"]
-# CORS(app, resources={r"/*": {"origins": origins}})
 CORS(app, resources={r"/*": {"origins": "https://vasiliy-katsyka.github.io"}})
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -39,12 +36,15 @@ def get_db():
 @app.teardown_appcontext
 def close_db(e=None):
     db = g.pop('db', None)
-    # Corrected line: 'is not' is the correct operator for checking identity against None.
     if db is not None:
         db.close()
 
 def setup_database():
+    # This function now connects and closes its own DB connection
+    # to be a self-contained, one-off setup task.
+    print("Attempting to connect to the database for setup...")
     db = psycopg2.connect(DATABASE_URL)
+    print("Database connection successful. Setting up tables...")
     cur = db.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -86,7 +86,14 @@ def setup_database():
     db.commit()
     cur.close()
     db.close()
-    print("Database tables checked/created.")
+    print("Database tables checked/created successfully.")
+
+# ======================================================================
+#  THE FIX IS HERE: Call setup_database() when the app module is loaded
+# ======================================================================
+with app.app_context():
+    setup_database()
+# ======================================================================
 
 # --- MIDDLEWARE & AUTH ---
 def token_required(f):
@@ -132,7 +139,12 @@ def register():
         )
         db.commit()
     except psycopg2.IntegrityError:
+        db.rollback() # Good practice to rollback on error
         return jsonify({'message': 'Username already exists'}), 409
+    except Exception as e:
+        db.rollback()
+        print(f"Error during registration: {e}")
+        return jsonify({'message': 'A server error occurred.'}), 500
     finally:
         cur.close()
 
@@ -227,7 +239,6 @@ def get_chats():
     db = get_db()
     cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    # Fetch all chats the user is a part of
     cur.execute("""
         SELECT c.id, c.is_group, c.group_name
         FROM chats c
@@ -241,9 +252,7 @@ def get_chats():
         chat_info = {'id': chat['id'], 'is_group': chat['is_group']}
         if chat['is_group']:
             chat_info['name'] = chat['group_name']
-            # Optionally, fetch participant count or other group info
         else:
-            # For 1-on-1 chats, find the other participant's name
             cur.execute("""
                 SELECT u.username, u.profile_picture 
                 FROM users u
@@ -254,7 +263,6 @@ def get_chats():
             chat_info['name'] = other_user['username'] if other_user else 'Unknown User'
             chat_info['profile_picture'] = base64.b64encode(other_user['profile_picture']).decode('utf-8') if other_user and other_user['profile_picture'] else None
         
-        # Get the last message for preview
         cur.execute("""
             SELECT text_content, content_type, timestamp FROM messages 
             WHERE chat_id = %s ORDER BY timestamp DESC LIMIT 1
@@ -273,7 +281,6 @@ def get_chats():
 @token_required
 def create_chat():
     data = request.get_json()
-    # usernames should be a list of usernames to include in the chat
     usernames = data.get('usernames', [])
     group_name = data.get('group_name')
 
@@ -285,7 +292,6 @@ def create_chat():
     db = get_db()
     cur = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    # Get user IDs for all usernames
     cur.execute("SELECT id, username FROM users WHERE username = ANY(%s)", (all_users,))
     participants = cur.fetchall()
     if len(participants) != len(all_users):
@@ -296,27 +302,24 @@ def create_chat():
     participant_ids = [p['id'] for p in participants]
     is_group = len(participant_ids) > 2
 
-    # For 1-on-1, check if chat already exists
-    if not is_group:
+    if not is_group and len(participant_ids) == 2:
         cur.execute("""
             SELECT chat_id FROM chat_participants cp1
             JOIN chat_participants cp2 ON cp1.chat_id = cp2.chat_id
             WHERE cp1.user_id = %s AND cp2.user_id = %s AND (
-                SELECT COUNT(*) FROM chat_participants WHERE chat_id = cp1.chat_id
-            ) = 2
+                SELECT is_group FROM chats WHERE id = cp1.chat_id
+            ) = FALSE
         """, (g.current_user['id'], participant_ids[1]))
         existing_chat = cur.fetchone()
         if existing_chat:
             return jsonify({'message': 'Chat already exists', 'chat_id': existing_chat['chat_id']}), 200
 
-    # Create the new chat
     cur.execute(
         "INSERT INTO chats (is_group, group_name) VALUES (%s, %s) RETURNING id",
         (is_group, group_name if is_group else None)
     )
     chat_id = cur.fetchone()['id']
     
-    # Add participants
     args_str = ','.join(cur.mogrify("(%s,%s)", (user_id, chat_id)).decode('utf-8') for user_id in participant_ids)
     cur.execute("INSERT INTO chat_participants (user_id, chat_id) VALUES " + args_str)
     
@@ -329,7 +332,6 @@ def create_chat():
 @app.route('/api/messages/<int:chat_id>', methods=['GET'])
 @token_required
 def get_messages(chat_id):
-    # Polling for new messages
     last_id = request.args.get('last_id', 0, type=int)
 
     db = get_db()
@@ -356,10 +358,9 @@ def get_messages(chat_id):
         }
         if msg['media_content']:
             media_b64 = base64.b64encode(msg['media_content']).decode('utf-8')
-            # Determine content type for data URL
             ct = msg['content_type'].lower()
             mime_type = 'application/octet-stream'
-            if ct == 'image': mime_type = 'image/png' # A simplification
+            if ct == 'image': mime_type = 'image/png'
             
             message_data['media_data_url'] = f"data:{mime_type};base64,{media_b64}"
             message_data['media_filename'] = msg['media_filename']
@@ -371,7 +372,6 @@ def get_messages(chat_id):
 @app.route('/api/messages', methods=['POST'])
 @token_required
 def post_messages():
-    # This endpoint receives a BATCH of messages
     data = request.get_json()
     messages_to_send = data.get('messages', [])
     chat_id = data.get('chat_id')
@@ -384,7 +384,7 @@ def post_messages():
     for msg in messages_to_send:
         content_type = msg.get('content_type')
         text_content = msg.get('text_content')
-        media_b64 = msg.get('media_content') # Expect base64
+        media_b64 = msg.get('media_content')
         media_filename = msg.get('media_filename')
         
         media_data = None
@@ -392,7 +392,7 @@ def post_messages():
             try:
                 media_data = base64.b64decode(media_b64)
             except:
-                continue # Skip malformed messages
+                continue
         
         cur.execute(
             """INSERT INTO messages (chat_id, sender_id, content_type, text_content, media_content, media_filename)
@@ -423,5 +423,5 @@ def ask_ai():
 
 
 if __name__ == '__main__':
-    setup_database()
+    # The setup_database() call is no longer needed here
     app.run(debug=True, port=5001)
