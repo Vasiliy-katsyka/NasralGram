@@ -34,7 +34,8 @@ def get_db():
 @app.teardown_appcontext
 def close_db(e=None):
     db = g.pop('db', None)
-    if db is not in None:
+    # Corrected line: 'is not' is the correct operator for checking identity against None.
+    if db is not None:
         db.close()
 
 def setup_database():
