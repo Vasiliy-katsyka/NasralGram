@@ -6,7 +6,7 @@ import base64
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, send_from_directory
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -104,6 +104,10 @@ def token_required(f):
             return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 401
         return f(*args, **kwargs)
     return decorated
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
 
 # --- ROUTES ---
 @app.route('/register', methods=['POST'])
