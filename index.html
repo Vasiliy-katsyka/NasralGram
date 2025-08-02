@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Messenger</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1b; --primary-text: #d7dadc; --secondary-text: #818384;
+            --panel-bg: #272729; --hover-bg: #3a3a3c; --border-color: #343536;
+            --accent-color: #4f46e5; --accent-hover: #4338ca; --error-color: #ef4444;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0; background-color: var(--bg-color); color: var(--primary-text);
+            overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh;
+        }
+        .hidden { display: none !important; }
+        /* Auth Views */
+        .auth-container { width: 320px; background: var(--panel-bg); padding: 2rem; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .auth-container h2 { text-align: center; margin-bottom: 1.5rem; }
+        .auth-container input { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--primary-text); border-radius: 4px; box-sizing: border-box; }
+        .auth-container button { width: 100%; padding: 0.75rem; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .auth-container button:hover { background: var(--accent-hover); }
+        .auth-container .switch-link { text-align: center; margin-top: 1rem; font-size: 0.9em; cursor: pointer; color: var(--secondary-text); }
+        .auth-container .error { color: var(--error-color); text-align: center; margin-bottom: 1rem; font-size: 0.9em; }
+
+        /* Main Chat App Layout */
+        #app-container { display: flex; width: 100%; height: 100%; max-width: 1400px; max-height: 900px; background: var(--panel-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #side-panel { width: 300px; background: var(--bg-color); display: flex; flex-direction: column; border-right: 1px solid var(--border-color); }
+        #main-panel { flex-grow: 1; display: flex; flex-direction: column; }
+        #profile-panel { width: 320px; background: var(--bg-color); border-left: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Side Panel (Chat List) */
+        .side-panel-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .side-panel-header h3 { margin: 0; }
+        .side-panel-header button { background: none; border: none; color: var(--primary-text); font-size: 1.5rem; cursor: pointer; }
+        #chat-list { flex-grow: 1; overflow-y: auto; }
+        .chat-item { display: flex; align-items: center; padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color); }
+        .chat-item:hover { background: var(--hover-bg); }
+        .chat-item.active { background: var(--accent-color); }
+        .chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--secondary-text); margin-right: 1rem; object-fit: cover; }
+        .chat-info { flex-grow: 1; overflow: hidden; }
+        .chat-name { font-weight: bold; white-space: nowrap; }
+        .chat-preview { font-size: 0.9em; color: var(--secondary-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Main Panel (Chat View) */
+        .chat-header { padding: 1rem; display: flex; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .chat-header h4 { margin: 0; }
+        #message-list { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
+        .message-input-area { padding: 1rem; border-top: 1px solid var(--border-color); display: flex; align-items: center; }
+        #message-input { flex-grow: 1; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--primary-text); padding: 0.75rem; border-radius: 20px; resize: none; }
+        #message-input-form button { background: var(--accent-color); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; margin-left: 0.5rem; cursor: pointer; font-size: 1.2rem; }
+        #file-input-label { cursor: pointer; padding: 0.5rem; margin-right: 0.5rem; }
+
+        /* Messages */
+        .message-container { display: flex; margin-bottom: 1rem; max-width: 70%; }
+        .message-container.sent { margin-left: auto; flex-direction: row-reverse; }
+        .message-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--secondary-text); margin: 0 0.5rem; }
+        .message-bubble { background: var(--panel-bg); padding: 0.75rem; border-radius: 18px; }
+        .message-container.sent .message-bubble { background: var(--accent-color); color: white; }
+        .message-sender { font-weight: bold; font-size: 0.8em; margin-bottom: 0.25rem; }
+        .message-content img { max-width: 100%; border-radius: 12px; margin-top: 5px; }
+        .message-content a { color: #8ab4f8; text-decoration: none; }
+        .message-content a:hover { text-decoration: underline; }
+        .message-content.ai-response { border-left: 3px solid #fbbc05; padding-left: 10px; }
+        .timestamp { font-size: 0.7em; color: var(--secondary-text); margin-top: 4px; text-align: right; }
+        
+        /* Profile Panel */
+        #profile-panel-avatar { width: 128px; height: 128px; border-radius: 50%; background: var(--secondary-text); object-fit: cover; margin-bottom: 1rem; border: 2px solid var(--border-color); cursor: pointer; }
+        #profile-panel h3 { margin: 0 0 0.5rem 0; }
+        #profile-panel p { color: var(--secondary-text); text-align: center; }
+        #profile-panel .close-btn { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--primary-text); font-size: 1.5rem; cursor: pointer; }
+
+        /* Modals */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; }
+        .modal { background: var(--panel-bg); padding: 2rem; border-radius: 8px; width: 400px; }
+        .modal h2 { margin-top: 0; }
+        .modal input, .modal textarea { width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--primary-text); border-radius: 4px; box-sizing: border-box; }
+        .modal button { padding: 0.75rem 1.5rem; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 1rem; }
+        .modal .cancel-btn { background: var(--secondary-text); }
+    </style>
+</head>
+<body>
+
+    <!-- Login View -->
+    <div id="login-view" class="auth-container">
+        <h2>Login</h2>
+        <form id="login-form">
+            <div id="login-error" class="error hidden"></div>
+            <input type="text" id="login-username" placeholder="Username" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <button type="submit">Log In</button>
+        </form>
+        <div class="switch-link" onclick="showView('register-view')">Don't have an account? Sign Up</div>
+    </div>
+
+    <!-- Register View -->
+    <div id="register-view" class="auth-container hidden">
+        <h2>Sign Up</h2>
+        <form id="register-form">
+            <div id="register-error" class="error hidden"></div>
+            <input type="text" id="register-username" placeholder="Username" required>
+            <input type="password" id="register-password" placeholder="Password" required>
+            <button type="submit">Create Account</button>
+        </form>
+        <div class="switch-link" onclick="showView('login-view')">Already have an account? Log In</div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden">
+        <div id="side-panel">
+            <div class="side-panel-header">
+                <h3 id="current-username-display"></h3>
+                <button onclick="showNewChatModal()">+</button>
+                <button onclick="showSettingsModal()">⚙️</button>
+            </div>
+            <div id="chat-list"></div>
+        </div>
+        <div id="main-panel">
+            <div class="chat-header">
+                <h4 id="chat-title">Select a chat</h4>
+            </div>
+            <div id="message-list"></div>
+            <div class="message-input-area">
+                <label for="file-input" id="file-input-label" title="Attach file">📎</label>
+                <input type="file" id="file-input" class="hidden">
+                <form id="message-input-form" style="display: flex; flex-grow: 1;">
+                    <textarea id="message-input" rows="1" placeholder="Type a message..."></textarea>
+                    <button type="submit">➤</button>
+                </form>
+            </div>
+        </div>
+        <div id="profile-panel" class="hidden">
+            <button class="close-btn" onclick="hideProfilePanel()">×</button>
+            <img id="profile-panel-avatar" src="" alt="Profile Picture">
+            <h3 id="profile-panel-username"></h3>
+            <p id="profile-panel-bio"></p>
+        </div>
+    </div>
+
+    <!-- New Chat Modal -->
+    <div id="new-chat-modal" class="modal-backdrop hidden">
+        <div class="modal">
+            <h2>New Chat</h2>
+            <form id="new-chat-form">
+                <input type="text" id="new-chat-usernames" placeholder="Usernames (comma-separated)">
+                <input type="text" id="new-chat-group-name" placeholder="Group Name (optional)">
+                <button type="submit">Create Chat</button>
+                <button type="button" class="cancel-btn" onclick="hideNewChatModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-backdrop hidden">
+        <div class="modal">
+            <h2>Settings</h2>
+            <form id="settings-form">
+                <p>Update your profile:</p>
+                <textarea id="settings-bio" placeholder="Your bio..."></textarea>
+                <label for="settings-pfp">Update Profile Picture:</label>
+                <input type="file" id="settings-pfp" accept="image/*">
+                <br><br>
+                <button type="submit">Save Changes</button>
+                <button type="button" class="cancel-btn" onclick="hideSettingsModal()">Cancel</button>
+            </form>
+            <hr style="border-color: var(--border-color); margin: 2rem 0;">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+
+    <script>
+        const API_URL = 'https://nasralgram.onrender.com';
+        let state = {
+            token: null,
+            currentUsername: null,
+            activeChatId: null,
+            chats: [],
+            messages: {}, // { chatId: [message, ...] }
+            lastMessageId: {}, // { chatId: lastId }
+            pollingInterval: null,
+            syncInterval: null,
+            messageQueue: [], // Messages to be sent in a batch
+        };
+
+        // --- UTILS & HELPERS ---
+        function showView(viewId) {
+            document.querySelectorAll('.auth-container, #app-container').forEach(v => v.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        async function apiFetch(endpoint, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (state.token) {
+                headers['x-access-token'] = state.token;
+            }
+            const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+            if (!response.ok) {
+                if (response.status === 401) logout();
+                const error = await response.json();
+                throw new Error(error.message || 'API request failed');
+            }
+            // some endpoints might not return json (e.g. 201 no content)
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return response.json();
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        function dataURLtoBlob(dataurl) {
+            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], {type:mime});
+        }
+
+
+        // --- AUTH ---
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const data = await apiFetch('/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                state.token = data.token;
+                state.currentUsername = data.username;
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('username', data.username);
+                awaitinitializeApp();
+            } catch (error) {
+                document.getElementById('login-error').textContent = error.message;
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            try {
+                await apiFetch('/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                alert('Registration successful! Please log in.');
+                showView('login-view');
+            } catch (error) {
+                document.getElementById('register-error').textContent = error.message;
+                document.getElementById('register-error').classList.remove('hidden');
+            }
+        });
+        
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+            state = { token: null, currentUsername: null, activeChatId: null, chats: [], messages: {}, lastMessageId: {} };
+            clearInterval(state.pollingInterval);
+            clearInterval(state.syncInterval);
+            showView('login-view');
+        }
+
+        // --- RENDERING ---
+        function renderChatList() {
+            const chatListEl = document.getElementById('chat-list');
+            chatListEl.innerHTML = '';
+            state.chats.sort((a,b) => new Date(b.last_message_time) - new Date(a.last_message_time));
+            state.chats.forEach(chat => {
+                const item = document.createElement('div');
+                item.className = 'chat-item';
+                if (chat.id === state.activeChatId) item.classList.add('active');
+                item.onclick = () => selectChat(chat.id);
+                
+                const avatarSrc = chat.profile_picture ? `data:image/png;base64,${chat.profile_picture}` : 'https://via.placeholder.com/48';
+                
+                item.innerHTML = `
+                    <img src="${avatarSrc}" class="chat-avatar">
+                    <div class="chat-info">
+                        <div class="chat-name">${chat.name}</div>
+                        <div class="chat-preview">${chat.last_message || ''}</div>
+                    </div>
+                `;
+                chatListEl.appendChild(item);
+            });
+        }
+        
+        function renderMessages() {
+            if (!state.activeChatId) return;
+            const messageListEl = document.getElementById('message-list');
+            messageListEl.innerHTML = '';
+            const messages = state.messages[state.activeChatId] || [];
+            messages.forEach(msg => {
+                appendMessage(msg);
+            });
+            messageListEl.scrollTop = messageListEl.scrollHeight;
+        }
+
+        function appendMessage(msg) {
+            const messageListEl = document.getElementById('message-list');
+            const container = document.createElement('div');
+            container.className = 'message-container';
+            if (msg.sender_username === state.currentUsername) {
+                container.classList.add('sent');
+            }
+
+            let contentHTML = `<div class="message-content">${parseMentions(msg.text_content || '')}</div>`;
+            if (msg.content_type === 'image' && msg.media_data_url) {
+                contentHTML += `<img src="${msg.media_data_url}" style="max-width: 250px; cursor: pointer;" onclick="window.open('${msg.media_data_url}')">`;
+            } else if (msg.content_type === 'file' && msg.media_data_url) {
+                contentHTML += `<a href="${msg.media_data_url}" download="${msg.media_filename}">Download: ${msg.media_filename}</a>`;
+            } else if (msg.content_type === 'ai_response') {
+                 contentHTML = `<div class="message-content ai-response"><b>AI Response:</b><br>${parseMentions(msg.text_content)}</div>`;
+            }
+            
+            container.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-sender">${msg.sender_username}</div>
+                    ${contentHTML}
+                    <div class="timestamp">${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+            `;
+            messageListEl.appendChild(container);
+        }
+        
+        function parseMentions(text) {
+            return text.replace(/@(\w+)/g, '<a href="#" onclick="showUserProfile(\'$1\')">@$1</a>');
+        }
+
+        // --- CORE APP LOGIC ---
+        async function initializeApp() {
+            showView('app-container');
+            document.getElementById('current-username-display').textContent = state.currentUsername;
+            
+            await loadChats();
+            startPolling();
+            startSyncing();
+        }
+        
+        async function loadChats() {
+            try {
+                state.chats = await apiFetch('/api/chats');
+                renderChatList();
+            } catch (error) {
+                console.error("Failed to load chats:", error);
+            }
+        }
+        
+        async function selectChat(chatId) {
+            state.activeChatId = chatId;
+            renderChatList(); // To update active highlight
+            
+            const chat = state.chats.find(c => c.id === chatId);
+            document.getElementById('chat-title').textContent = chat.name;
+            
+            // Load initial messages if not already loaded
+            if (!state.messages[chatId]) {
+                state.messages[chatId] = [];
+                state.lastMessageId[chatId] = 0;
+                const messages = await apiFetch(`/api/messages/${chatId}`);
+                state.messages[chatId] = messages;
+                if(messages.length > 0) {
+                    state.lastMessageId[chatId] = messages[messages.length - 1].id;
+                }
+            }
+            renderMessages();
+        }
+
+        function startPolling() {
+            if (state.pollingInterval) clearInterval(state.pollingInterval);
+            state.pollingInterval = setInterval(async () => {
+                if (!state.activeChatId) return;
+                try {
+                    const lastId = state.lastMessageId[state.activeChatId] || 0;
+                    const newMessages = await apiFetch(`/api/messages/${state.activeChatId}?last_id=${lastId}`);
+                    if (newMessages.length > 0) {
+                        state.messages[state.activeChatId].push(...newMessages);
+                        state.lastMessageId[state.activeChatId] = newMessages[newMessages.length - 1].id;
+                        renderMessages(); // Could be optimized to only append
+                    }
+                } catch(error) {
+                    console.error("Polling failed:", error);
+                }
+                
+                // Also poll chat list for updates
+                await loadChats();
+
+            }, 3000); // Poll every 3 seconds
+        }
+
+        function startSyncing() {
+            // Load from localStorage first
+            const savedQueue = localStorage.getItem('messageQueue');
+            if (savedQueue) {
+                state.messageQueue = JSON.parse(savedQueue);
+            }
+
+            if(state.syncInterval) clearInterval(state.syncInterval);
+            state.syncInterval = setInterval(async () => {
+                if (state.messageQueue.length === 0) return;
+                
+                // We only sync messages for the currently active chat
+                const messagesToSend = state.messageQueue.filter(m => m.chat_id === state.activeChatId);
+                if (messagesToSend.length === 0) return;
+
+                try {
+                    await apiFetch('/api/messages', {
+                        method: 'POST',
+                        body: JSON.stringify({ chat_id: state.activeChatId, messages: messagesToSend })
+                    });
+                    // Success, clear the sent messages from queue
+                    state.messageQueue = state.messageQueue.filter(m => m.chat_id !== state.activeChatId);
+                    localStorage.setItem('messageQueue', JSON.stringify(state.messageQueue));
+                    console.log("Batch sent to server.");
+                } catch (error) {
+                    console.error("Failed to sync messages:", error);
+                    // Don't clear queue, will retry next interval
+                }
+
+            }, 5000); // Sync every 5 seconds
+        }
+
+        document.getElementById('message-input-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendMessage();
+        });
+
+        document.getElementById('message-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+
+            if (!text && !file) return;
+
+            // Handle AI command
+            if (text.startsWith('/ai ')) {
+                const prompt = text.substring(4);
+                input.value = '';
+                try {
+                    const aiResponse = await apiFetch('/api/ai', { method: 'POST', body: JSON.stringify({ prompt }) });
+                    const aiMessage = {
+                        sender_username: "AI",
+                        content_type: "ai_response",
+                        text_content: aiResponse.response,
+                        timestamp: new Date().toISOString()
+                    };
+                    appendMessage(aiMessage);
+                    document.getElementById('message-list').scrollTop = document.getElementById('message-list').scrollHeight;
+                } catch (error) {
+                    alert(`AI Error: ${error.message}`);
+                }
+                return;
+            }
+
+            const message = {
+                chat_id: state.activeChatId,
+                sender_username: state.currentUsername,
+                text_content: text,
+                timestamp: new Date().toISOString()
+            };
+
+            if (file) {
+                message.content_type = file.type.startsWith('image/') ? 'image' : 'file';
+                message.media_filename = file.name;
+                message.media_content = await fileToBase64(file);
+                
+                // For optimistic update, create a local URL for the image
+                message.media_data_url = URL.createObjectURL(file);
+            } else {
+                message.content_type = 'text';
+            }
+
+            // 1. Optimistic Update: Show message immediately
+            if (!state.messages[state.activeChatId]) state.messages[state.activeChatId] = [];
+            state.messages[state.activeChatId].push(message);
+            appendMessage(message);
+            document.getElementById('message-list').scrollTop = document.getElementById('message-list').scrollHeight;
+
+            // 2. Add to sync queue (without local data_url)
+            const queueMessage = { ...message };
+            delete queueMessage.media_data_url;
+            state.messageQueue.push(queueMessage);
+            localStorage.setItem('messageQueue', JSON.stringify(state.messageQueue));
+
+            // 3. Clear inputs
+            input.value = '';
+            fileInput.value = '';
+        }
+        
+        // --- MODALS and PROFILE PANEL ---
+        function showNewChatModal() { document.getElementById('new-chat-modal').classList.remove('hidden'); }
+        function hideNewChatModal() { document.getElementById('new-chat-modal').classList.add('hidden'); }
+        function showSettingsModal() { 
+            apiFetch('/api/profile').then(profile => {
+                document.getElementById('settings-bio').value = profile.bio || '';
+                document.getElementById('settings-modal').classList.remove('hidden'); 
+            });
+        }
+        function hideSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+        
+        document.getElementById('new-chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const usernames = document.getElementById('new-chat-usernames').value.split(',').map(u => u.trim());
+            const groupName = document.getElementById('new-chat-group-name').value;
+            try {
+                const result = await apiFetch('/api/chats/create', { 
+                    method: 'POST', 
+                    body: JSON.stringify({ usernames, group_name: groupName })
+                });
+                await loadChats();
+                selectChat(result.chat_id);
+                hideNewChatModal();
+            } catch (error) {
+                alert(`Error creating chat: ${error.message}`);
+            }
+        });
+        
+        document.getElementById('settings-form').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const bio = document.getElementById('settings-bio').value;
+            const pfpFile = document.getElementById('settings-pfp').files[0];
+            let pfpB64 = null;
+            if(pfpFile) {
+                pfpB64 = await fileToBase64(pfpFile);
+            }
+
+            try {
+                await apiFetch('/api/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify({ bio, profile_picture: pfpB64 ? `data:image/png;base64,${pfpB64}` : null })
+                });
+                alert('Profile updated!');
+                hideSettingsModal();
+            } catch(error) {
+                alert(`Error: ${error.message}`);
+            }
+        });
+
+        async function showUserProfile(username) {
+            try {
+                const profile = await apiFetch(`/api/profile/${username}`);
+                document.getElementById('profile-panel-username').textContent = profile.username;
+                document.getElementById('profile-panel-bio').textContent = profile.bio || "No bio set.";
+                const avatar = document.getElementById('profile-panel-avatar');
+                avatar.src = profile.profile_picture ? `data:image/jpeg;base64,${profile.profile_picture}` : 'https://via.placeholder.com/128';
+                document.getElementById('profile-panel').classList.remove('hidden');
+            } catch(error) {
+                alert(`Could not load profile: ${error.message}`);
+            }
+        }
+        function hideProfilePanel() { document.getElementById('profile-panel').classList.add('hidden'); }
+
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            state.token = localStorage.getItem('authToken');
+            state.currentUsername = localStorage.getItem('username');
+            if (state.token && state.currentUsername) {
+                initializeApp();
+            } else {
+                showView('login-view');
+            }
+        };
+
+    </script>
+</body>
+                  </html>
