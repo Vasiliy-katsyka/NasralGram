@@ -1,8 +1,8 @@
 Flask
-psycopg2-binary
-PyJWT
-werkzeug
-google-generativeai
-python-dotenv
+Flask-SocketIO
 gunicorn
-Flask-CORS
+psycopg2-binary
+python-dotenv
+Werkzeug
+google-generativeai
+eventlet
