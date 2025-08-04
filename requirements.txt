@@ -6,3 +6,4 @@ python-dotenv
 Werkzeug
 google-generativeai
 eventlet
+Flask-CORS
