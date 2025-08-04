@@ -6,7 +6,8 @@ from functools import wraps
 
 from dotenv import load_dotenv
 from flask import (Flask, request, jsonify, render_template, session,
-                   send_file, abort)
+                   send_file)
+from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from psycopg2 import pool
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,8 +21,19 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_super_secret_key_for_dev')
+# Production cookie settings for cross-domain requests
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+
 DATABASE_URL = os.environ.get('DATABASE_URL')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+FRONTEND_URL = "https://vasiliy-katsyka.github.io"
+
+# --- CORS Configuration ---
+# Allow requests from your specific frontend URL, and support credentials for sessions.
+# Also added localhost for local development testing.
+CORS(app, supports_credentials=True, origins=[FRONTEND_URL, "http://127.0.0.1:5500", "http://localhost:5500"])
 
 # Configure Gemini AI
 if GEMINI_API_KEY:
@@ -31,10 +43,9 @@ else:
     gemini_model = None
     logging.warning("GEMINI_API_KEY not found. AI features will be disabled.")
 
-# Use eventlet for async mode, as required by gunicorn worker
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins=[FRONTEND_URL, "http://127.0.0.1:5500", "http://localhost:5500"])
 
-# --- Database Setup ---
+# --- Database Setup (Identical to previous version) ---
 
 db_pool = None
 
@@ -99,15 +110,27 @@ def init_db():
     finally:
         release_db_connection(conn)
 
-# --- Decorators for Authentication ---
+
+# --- Decorators and Error Handlers ---
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return abort(401, description="User not logged in.")
+            # Return a JSON error instead of aborting to prevent HTML response
+            return jsonify({"success": False, "error": "Authentication required."}), 401
         return f(*args, **kwargs)
     return decorated_function
+
+# Generic error handlers to ensure API always returns JSON
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({"success": False, "error": "Resource not found"}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"success": False, "error": "Internal server error"}), 500
+
 
 # --- Helper Functions ---
 
@@ -127,11 +150,13 @@ def _broadcast_new_message(message_data):
     """Helper to broadcast a message to the correct room."""
     socketio.emit('new_message', message_data, room=str(message_data['chat_id']))
 
+
 # --- Flask Routes (API) ---
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # This route is less important if frontend is fully decoupled, but good for health checks
+    return "Backend is running."
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -180,15 +205,17 @@ def login():
         release_db_connection(conn)
 
 @app.route('/logout', methods=['POST'])
+@login_required
 def logout():
     session.clear()
     return jsonify({"success": True})
 
 @app.route('/check_session')
+@login_required
 def check_session():
-    if 'user_id' in session:
-        return jsonify({"loggedIn": True, "username": session['username']})
-    return jsonify({"loggedIn": False})
+    # The decorator handles the auth check. If it passes, we are logged in.
+    return jsonify({"loggedIn": True, "username": session['username']})
+
 
 @app.route('/get_user_chats')
 @login_required
@@ -197,7 +224,6 @@ def get_user_chats():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            # Query to get chats, other participant's name, and the last message
             cur.execute("""
                 WITH last_messages AS (
                     SELECT
@@ -238,11 +264,10 @@ def get_user_chats():
 def get_chat_messages(chat_id):
     user_id = session['user_id']
     if not is_user_in_chat(user_id, chat_id):
-        return abort(403)
+        return jsonify({"success": False, "error": "Forbidden"}), 403
 
     before_id = request.args.get('before', type=int)
     limit = 50
-
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -258,13 +283,10 @@ def get_chat_messages(chat_id):
             
             query += " ORDER BY m.timestamp DESC LIMIT %s"
             params.append(limit)
-
             cur.execute(query, tuple(params))
             messages = cur.fetchall()
             
-            # Reverse to send in chronological order
             messages.reverse()
-
             message_list = [
                 {
                     "id": row[0], "content": row[1], "message_type": row[2],
@@ -298,7 +320,6 @@ def search_users():
 def create_chat():
     target_username = request.json.get('target_username')
     user_id = session['user_id']
-
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -308,7 +329,6 @@ def create_chat():
                 return jsonify({"success": False, "error": "User not found"}), 404
             target_user_id = target_user[0]
 
-            # Check if a chat already exists
             cur.execute("""
                 SELECT p1.chat_id FROM participants p1
                 JOIN participants p2 ON p1.chat_id = p2.chat_id
@@ -319,17 +339,14 @@ def create_chat():
             if existing_chat:
                 return jsonify({"success": True, "chat_id": existing_chat[0], "participant_username": target_username})
 
-            # Create new chat
             cur.execute("INSERT INTO chats DEFAULT VALUES RETURNING id")
             chat_id = cur.fetchone()[0]
             cur.execute("INSERT INTO participants (user_id, chat_id) VALUES (%s, %s), (%s, %s)",
                         (user_id, chat_id, target_user_id, chat_id))
             conn.commit()
-
             return jsonify({"success": True, "chat_id": chat_id, "participant_username": target_username})
     except Exception as e:
         conn.rollback()
-        logging.error(f"Chat creation error: {e}")
         return jsonify({"success": False, "error": "Could not create chat"}), 500
     finally:
         release_db_connection(conn)
@@ -344,12 +361,9 @@ def upload_file(chat_id):
         return jsonify({"success": False, "error": "No selected file"}), 400
 
     if not is_user_in_chat(session['user_id'], chat_id):
-        return abort(403)
+        return jsonify({"success": False, "error": "Forbidden"}), 403
 
     file_data = file.read()
-    file_name = file.filename
-    file_mime_type = file.mimetype
-
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -358,29 +372,23 @@ def upload_file(chat_id):
                 INSERT INTO messages (chat_id, sender_id, message_type, file_data, file_name, file_mime_type)
                 VALUES (%s, %s, 'file', %s, %s, %s) RETURNING id, timestamp
                 """,
-                (chat_id, session['user_id'], file_data, file_name, file_mime_type)
+                (chat_id, session['user_id'], file_data, file.filename, file.mimetype)
             )
             message_id, timestamp = cur.fetchone()
             conn.commit()
 
             message_data = {
-                "id": message_id,
-                "chat_id": chat_id,
-                "sender_username": session['username'],
-                "message_type": "file",
-                "file_name": file_name,
-                "content": None,
+                "id": message_id, "chat_id": chat_id, "sender_username": session['username'],
+                "message_type": "file", "file_name": file.filename, "content": None,
                 "timestamp": timestamp.isoformat()
             }
             _broadcast_new_message(message_data)
             return jsonify({"success": True})
     except Exception as e:
         conn.rollback()
-        logging.error(f"File upload error: {e}")
         return jsonify({"success": False, "error": "Failed to upload file."}), 500
     finally:
         release_db_connection(conn)
-
 
 @app.route('/files/<int:message_id>')
 @login_required
@@ -394,11 +402,11 @@ def get_file(message_id):
             )
             message = cur.fetchone()
             if not message:
-                return abort(404)
+                return jsonify({"success": False, "error": "File not found"}), 404
             
             chat_id, file_data, file_name, file_mime_type = message
             if not is_user_in_chat(session['user_id'], chat_id):
-                return abort(403)
+                return jsonify({"success": False, "error": "Forbidden"}), 403
 
             return send_file(
                 io.BytesIO(file_data),
@@ -409,13 +417,13 @@ def get_file(message_id):
     finally:
         release_db_connection(conn)
 
-# --- Socket.IO Handlers ---
+# --- Socket.IO Handlers (Identical to previous version) ---
 
 @socketio.on('connect')
 def handle_connect():
     if 'user_id' not in session:
-        logging.warning(f"Unauthenticated connection rejected: {request.sid}")
-        return False  # Reject connection
+        logging.warning(f"Unauthenticated socket connection rejected: {request.sid}")
+        return False
     logging.info(f"Client connected: {session.get('username')} ({request.sid})")
 
 @socketio.on('disconnect')
@@ -424,31 +432,30 @@ def handle_disconnect():
 
 @socketio.on('join_room')
 def handle_join_room(data):
-    chat_id = data['chat_id']
-    if is_user_in_chat(session.get('user_id'), chat_id):
-        join_room(str(chat_id))
-        logging.info(f"{session.get('username')} joined room {chat_id}")
-    else:
-        logging.warning(f"{session.get('username')} tried to join unauthorized room {chat_id}")
+    if 'user_id' in session:
+        chat_id = data['chat_id']
+        if is_user_in_chat(session.get('user_id'), chat_id):
+            join_room(str(chat_id))
+            logging.info(f"{session.get('username')} joined room {chat_id}")
 
 @socketio.on('leave_room')
 def handle_leave_room(data):
-    chat_id = data['chat_id']
-    leave_room(str(chat_id))
-    logging.info(f"{session.get('username')} left room {chat_id}")
+    if 'user_id' in session:
+        leave_room(str(data['chat_id']))
+        logging.info(f"{session.get('username')} left room {data['chat_id']}")
 
 @socketio.on('send_message')
 def handle_send_message(data):
+    if 'user_id' not in session:
+        return
+    
     chat_id = data['chat_id']
     content = data['content']
     sender_id = session.get('user_id')
-    sender_username = session.get('username')
 
-    if not sender_id or not is_user_in_chat(sender_id, chat_id):
-        logging.warning(f"Unauthorized message attempt by {sender_username} in chat {chat_id}")
+    if not is_user_in_chat(sender_id, chat_id):
         return
 
-    # AI Feature Logic
     if content.strip().lower().startswith('/ai '):
         if not gemini_model:
             ai_response_content = "AI feature is currently disabled."
@@ -461,17 +468,12 @@ def handle_send_message(data):
                 logging.error(f"Gemini API error: {e}")
                 ai_response_content = "Sorry, I couldn't process that request."
         
-        ai_message = {
-            "chat_id": chat_id,
-            "sender_username": "Gemini AI",
-            "content": ai_response_content,
-            "message_type": "text",
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
-        }
-        _broadcast_new_message(ai_message)
+        _broadcast_new_message({
+            "chat_id": chat_id, "sender_username": "Gemini AI", "content": ai_response_content,
+            "message_type": "text", "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        })
         return
 
-    # Standard Message Logic
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -481,29 +483,20 @@ def handle_send_message(data):
             )
             message_id, timestamp = cur.fetchone()
             conn.commit()
-
-            message_data = {
-                "id": message_id,
-                "chat_id": chat_id,
-                "sender_username": sender_username,
-                "content": content,
-                "message_type": "text",
-                "timestamp": timestamp.isoformat()
-            }
-            _broadcast_new_message(message_data)
+            _broadcast_new_message({
+                "id": message_id, "chat_id": chat_id, "sender_username": session.get('username'),
+                "content": content, "message_type": "text", "timestamp": timestamp.isoformat()
+            })
     except Exception as e:
         conn.rollback()
         logging.error(f"Message saving error: {e}")
     finally:
         release_db_connection(conn)
 
-
 # --- Main Execution ---
-
 if __name__ == '__main__':
     init_db()
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
 else:
-    # When run by Gunicorn on Render, initialize DB here
     init_db_pool()
     init_db()
