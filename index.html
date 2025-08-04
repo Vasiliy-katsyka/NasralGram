@@ -210,6 +210,16 @@
             color: #0056b3;
             text-decoration: underline;
         }
+        a.file-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        a.file-link::before {
+            content: '📎';
+            font-size: 1.2rem;
+        }
+
 
         #message-form {
             display: flex;
@@ -289,6 +299,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Configuration ---
+    const API_URL = 'https://nasralgram.onrender.com';
+
     // --- State ---
     let currentUser = null;
     let activeChat = { id: null, participant: null };
@@ -299,25 +312,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const authView = document.getElementById('auth-view');
     const appContainer = document.getElementById('app-container');
-    const sidePanel = document.getElementById('side-panel');
-    const chatView = document.getElementById('chat-view');
-
-    // Auth
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('login-btn');
     const registerBtn = document.getElementById('register-btn');
     const authError = document.getElementById('auth-error');
-
-    // Side Panel
     const currentUserDisplay = document.getElementById('current-user');
     const logoutBtn = document.getElementById('logout-btn');
     const searchInput = document.getElementById('search-input');
     const searchBtn = document.getElementById('search-btn');
     const searchResultsContainer = document.getElementById('search-results');
     const chatListContainer = document.getElementById('chat-list');
-
-    // Chat View
     const backToChatsBtn = document.getElementById('back-to-chats-btn');
     const chatHeaderTitle = document.getElementById('chat-header-title');
     const messageContainer = document.getElementById('message-container');
@@ -328,18 +333,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
     // --- Utility Functions ---
-    const apiFetch = async (url, options = {}) => {
-        try {
-            const response = await fetch(url, options);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        } catch (error) {
-            console.error('API Fetch Error:', error);
-            throw error;
+    const apiFetch = async (endpoint, options = {}) => {
+        // Required for cross-domain requests to send cookies
+        options.credentials = 'include';
+        if (options.body && !(options.body instanceof FormData)) {
+            options.headers = { ...options.headers, 'Content-Type': 'application/json' };
+            options.body = JSON.stringify(options.body);
         }
+
+        const response = await fetch(`${API_URL}${endpoint}`, options);
+
+        if (response.status === 401) {
+            handleLogout(); // Session expired or invalid, force logout
+            throw new Error("Authentication failed. Please log in again.");
+        }
+
+        const text = await response.text();
+        // Try to parse as JSON, but handle cases where it might be empty (e.g., 204 No Content)
+        const data = text ? JSON.parse(text) : {};
+        
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        }
+        return data;
     };
     
     const showAuthError = (message) => {
@@ -354,17 +370,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Socket.IO Connection ---
     const connectSocket = () => {
-        socket = io({ autoConnect: true });
+        if (socket && socket.connected) return;
 
-        socket.on('connect', () => console.log('Socket connected!'));
+        // withCredentials is required for cross-domain cookie-based authentication
+        socket = io(API_URL, { 
+            autoConnect: true, 
+            withCredentials: true 
+        });
+
+        socket.on('connect', () => console.log('Socket connected! ID:', socket.id));
         socket.on('disconnect', () => console.log('Socket disconnected!'));
         socket.on('connect_error', (err) => {
             console.error("Socket connection error:", err.message);
-            // This can happen if the server rejects the connection (e.g., unauthenticated)
-            // Might need to re-authenticate
-            if (currentUser) {
-                // If we think we're logged in, try to re-establish session
-                checkSession();
+            if (err.message === "xhr poll error") {
+                 showAuthError("Connection issue. Please refresh.");
             }
         });
         
@@ -372,7 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (msg.chat_id === activeChat.id) {
                 appendMessage(msg, false);
             }
-            // Refresh chat list to show new last message
             loadUserChats();
         });
     };
@@ -382,8 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await apiFetch('/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value })
+                body: { username: usernameInput.value, password: passwordInput.value }
             });
             if (data.success) {
                 await setupApp(data.username);
@@ -397,8 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await apiFetch('/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value })
+                body: { username: usernameInput.value, password: passwordInput.value }
             });
             if (data.success) {
                 alert('Registration successful! Please log in.');
@@ -410,7 +426,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const handleLogout = async () => {
-        await apiFetch('/logout', { method: 'POST' });
+        if (currentUser) { // Only call API if logged in
+            try {
+                await apiFetch('/logout', { method: 'POST' });
+            } catch (error) {
+                console.warn("Logout API call failed, continuing cleanup.", error);
+            }
+        }
         currentUser = null;
         activeChat = { id: null, participant: null };
         authView.classList.remove('hidden');
@@ -420,15 +442,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const checkSession = async () => {
         try {
-            const data = await fetch('/check_session').then(res => res.json());
+            const data = await apiFetch('/check_session');
             if (data.loggedIn) {
                 await setupApp(data.username);
             } else {
-                authView.classList.remove('hidden');
-                appContainer.classList.add('hidden');
+                handleLogout();
             }
         } catch (error) {
-            console.error("Session check failed:", error);
+            console.log("No active session found.");
             authView.classList.remove('hidden');
             appContainer.classList.add('hidden');
         }
@@ -436,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const setupApp = async (username) => {
         currentUser = username;
-        currentUserDisplay.textContent = `Logged in as ${currentUser}`;
+        currentUserDisplay.textContent = `${currentUser}`;
         authView.classList.add('hidden');
         appContainer.classList.remove('hidden');
         connectSocket();
@@ -450,14 +471,13 @@ document.addEventListener('DOMContentLoaded', () => {
             renderChatList(chats);
         } catch (error) {
             console.error('Failed to load chats:', error);
-            if (error.message.includes("401")) handleLogout();
         }
     };
 
     const renderChatList = (chats) => {
         chatListContainer.innerHTML = '';
         if (chats.length === 0) {
-            chatListContainer.innerHTML = '<div class="list-item"><p>No chats yet. Start one by searching for a user.</p></div>';
+            chatListContainer.innerHTML = '<div class="list-item"><p>No chats yet. Start one by searching.</p></div>';
             return;
         }
         chats.forEach(chat => {
@@ -479,8 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const users = await apiFetch('/search_users', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query })
+                body: { query }
             });
             renderSearchResults(users);
         } catch (error) {
@@ -509,8 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await apiFetch('/create_chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target_username: targetUsername })
+                body: { target_username: targetUsername }
             });
             if (data.success) {
                 await loadUserChats();
@@ -529,8 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         activeChat.id = chatId;
         activeChat.participant = participantName;
-        oldestMessageId = null; // Reset for new chat
-        messageContainer.innerHTML = ''; // Clear old messages
+        oldestMessageId = null;
+        messageContainer.innerHTML = '';
 
         socket.emit('join_room', { chat_id: chatId });
 
@@ -550,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadMessages = async (isInitialLoad = false) => {
-        if (isLoadingMessages || (oldestMessageId === -1 && !isInitialLoad)) return; // End of history
+        if (isLoadingMessages || (oldestMessageId === -1 && !isInitialLoad)) return;
         isLoadingMessages = true;
         
         let url = `/get_chat_messages/${activeChat.id}`;
@@ -564,12 +582,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages.forEach(msg => appendMessage(msg, true));
                 oldestMessageId = messages[0].id;
             } else {
-                oldestMessageId = -1; // Mark as end of history
+                oldestMessageId = -1;
             }
             if (isInitialLoad) {
                 messageContainer.scrollTop = messageContainer.scrollHeight;
             } else if (messages.length > 0) {
-                 messageContainer.scrollTop = 10; // keep scroll position
+                 const firstMessage = messageContainer.firstChild;
+                 messageContainer.scrollTop = firstMessage.offsetTop - 10;
             }
         } catch (error) {
             console.error("Failed to load messages:", error);
@@ -584,15 +603,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAiMessage = msg.sender_username === 'Gemini AI';
         
         msgEl.classList.add('message');
-        if (isAiMessage) {
-            msgEl.classList.add('ai-message');
-        } else {
-            msgEl.classList.add(isMyMessage ? 'my-message' : 'other-message');
-        }
+        msgEl.classList.add(isAiMessage ? 'ai-message' : (isMyMessage ? 'my-message' : 'other-message'));
 
         let contentHTML;
         if (msg.message_type === 'file') {
-            contentHTML = `<a href="/files/${msg.id}" target="_blank" download>${msg.file_name}</a>`;
+            contentHTML = `<a href="${API_URL}/files/${msg.id}" class="file-link" target="_blank">${msg.file_name}</a>`;
         } else {
             contentHTML = msg.content;
         }
@@ -614,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleSendMessage = (e) => {
         e.preventDefault();
         const content = messageInput.value.trim();
-        if (content && activeChat.id) {
+        if (content && activeChat.id && socket && socket.connected) {
             socket.emit('send_message', {
                 chat_id: activeChat.id,
                 content: content
@@ -626,22 +641,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file || !activeChat.id) return;
-
         const formData = new FormData();
         formData.append('file', file);
-
         try {
-            const response = await fetch(`/upload_file/${activeChat.id}`, {
+            await apiFetch(`/upload_file/${activeChat.id}`, {
                 method: 'POST',
                 body: formData
             });
-            if (!response.ok) throw new Error('File upload failed');
-            // The new message will arrive via WebSocket, so no need to do anything else here.
         } catch (error) {
             console.error('Error uploading file:', error);
             alert('Error uploading file.');
         } finally {
-            // Reset file input
             fileInput.value = '';
         }
     };
@@ -649,17 +659,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
     loginBtn.addEventListener('click', handleLogin);
     registerBtn.addEventListener('click', handleRegister);
-    [usernameInput, passwordInput].forEach(input => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-    });
-    
+    [usernameInput, passwordInput].forEach(input => input.addEventListener('keypress', (e) => e.key === 'Enter' && handleLogin()));
     logoutBtn.addEventListener('click', handleLogout);
     searchBtn.addEventListener('click', handleSearch);
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSearch();
-    });
+    searchInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleSearch());
     searchInput.addEventListener('input', () => {
         if (searchInput.value.trim() === '') {
             searchResultsContainer.classList.add('hidden');
