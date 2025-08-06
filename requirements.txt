@@ -1,9 +1,7 @@
 Flask
-Flask-SocketIO
-gunicorn
+Flask-SQLAlchemy
 psycopg2-binary
-python-dotenv
-Werkzeug
-google-generativeai
-eventlet
+gunicorn
 Flask-CORS
+python-dotenv
+google-generativeai
