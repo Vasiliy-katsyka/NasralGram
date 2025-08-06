@@ -2,703 +2,309 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
-        :root {
-            --primary-color: #0088cc;
-            --light-bg: #f0f4f8;
-            --white: #ffffff;
-            --my-message-bg: #dcf8c6;
-            --other-message-bg: #ffffff;
-            --text-color: #333;
-            --header-height: 50px;
-            --footer-height: 60px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--light-bg);
-            color: var(--text-color);
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f0f2f5; }
         .hidden { display: none !important; }
-
-        /* --- Auth View --- */
-        #auth-view {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            padding: 20px;
-        }
-
-        #auth-view h1 {
-            color: var(--primary-color);
-            margin-bottom: 20px;
-        }
-
-        .auth-form {
-            width: 100%;
-            max-width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .auth-form input {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .auth-buttons button {
-            flex-grow: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        #auth-error {
-            color: red;
-            text-align: center;
-            height: 1em;
-            margin-top: 10px;
-        }
-
-        /* --- App View --- */
-        #app-container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .app-view {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease-in-out;
-            background-color: var(--light-bg);
-        }
-
-        #side-panel {
-            z-index: 10;
-        }
-
-        #chat-view {
-            transform: translateX(100%);
-            z-index: 20;
-            background-color: #e5ddd5;
-        }
-
-        #app-container.chat-active #side-panel {
-            transform: translateX(-100%);
-        }
-        #app-container.chat-active #chat-view {
-            transform: translateX(0);
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            height: var(--header-height);
-            background-color: var(--primary-color);
-            color: var(--white);
-            flex-shrink: 0;
-        }
-        .header h2 { font-size: 1.2rem; flex-grow: 1; }
-        .header .back-btn, .header .logout-btn {
-            background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 10px;
-        }
-
-        /* Side Panel */
-        #side-panel .header #current-user { font-size: 0.8rem; text-align: right; }
-        #search-container { padding: 10px; display: flex; gap: 5px; }
-        #search-input { flex-grow: 1; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-        #search-btn { padding: 8px 12px; border: none; background: var(--primary-color); color: white; border-radius: 5px; cursor: pointer;}
+        #app-container, #login-container { max-width: 1000px; margin: 20px auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
         
-        #search-results, #chat-list {
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-        .list-item {
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            cursor: pointer;
-            background-color: var(--white);
-        }
-        .list-item:hover { background-color: #f5f5f5; }
-        .list-item .item-main { font-weight: bold; }
-        .list-item .item-sub { font-size: 0.9rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Login Screen */
+        #login-container { padding: 40px; text-align: center; }
+        #login-container h1 { margin-top: 0; }
+        #login-container input { width: 80%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        #login-container button { padding: 12px 20px; border: none; background-color: #007bff; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        #login-container button:hover { background-color: #0056b3; }
+        #login-error { color: red; margin-top: 10px; }
+        
+        /* Main App */
+        #app-view { display: flex; height: 80vh; }
+        #sidebar { width: 30%; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #chat-area { width: 70%; display: flex; flex-direction: column; }
+        
+        /* Sidebar */
+        .sidebar-header { padding: 10px; border-bottom: 1px solid #ddd; }
+        .sidebar-header input { width: calc(100% - 20px); padding: 8px; border: 1px solid #ccc; border-radius: 15px; }
+        #search-results { max-height: 200px; overflow-y: auto; }
+        #search-results div, #chat-list div { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee; }
+        #search-results div:hover, #chat-list div:hover { background-color: #f5f5f5; }
+        #chat-list .active-chat { background-color: #e0e0e0; }
+        .chat-list-title { padding: 10px 15px; font-weight: bold; color: #555; background-color: #f9f9f9; border-bottom: 1px solid #ddd; }
 
-        /* Chat View */
-        #message-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-        }
-        .message {
-            max-width: 75%;
-            padding: 8px 12px;
-            border-radius: 15px;
-            margin-bottom: 5px;
-            word-wrap: break-word;
-        }
-        .message.my-message {
-            background-color: var(--my-message-bg);
-            align-self: flex-end;
-            border-bottom-right-radius: 3px;
-        }
-        .message.other-message {
-            background-color: var(--other-message-bg);
-            align-self: flex-start;
-            border-bottom-left-radius: 3px;
-        }
-        .message .sender-name {
-            font-weight: bold;
-            font-size: 0.8rem;
-            margin-bottom: 3px;
-            color: var(--primary-color);
-        }
-        .message .timestamp {
-            font-size: 0.7rem;
-            color: #999;
-            text-align: right;
-            margin-top: 4px;
-            display: block;
-        }
-        .message.ai-message {
-            background-color: #e1f5fe;
-            align-self: flex-start;
-        }
-        .message.ai-message .sender-name {
-            color: #0277bd;
-        }
-        .message a {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-        a.file-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        a.file-link::before {
-            content: '📎';
-            font-size: 1.2rem;
-        }
+        /* Chat Area */
+        #chat-header { padding: 15px; border-bottom: 1px solid #ddd; font-weight: bold; background: #f9f9f9; }
+        #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        #message-input-area { border-top: 1px solid #ddd; padding: 10px; display: flex; }
+        #message-input-area input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-right: 10px; }
+        #message-input-area button { padding: 10px 15px; border-radius: 20px; border: none; background-color: #007bff; color: white; cursor: pointer; }
 
-
-        #message-form {
-            display: flex;
-            padding: 10px;
-            height: var(--footer-height);
-            background: var(--light-bg);
-            align-items: center;
-            gap: 10px;
-        }
-        #message-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            font-size: 1rem;
-        }
-        #message-form button {
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            border: none;
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #file-input { display: none; }
+        /* Messages */
+        .message { max-width: 70%; padding: 10px 15px; margin-bottom: 10px; border-radius: 18px; line-height: 1.4; }
+        .message.sent { background-color: #007bff; color: white; align-self: flex-end; }
+        .message.received { background-color: #e9e9eb; color: #333; align-self: flex-start; }
+        .message.gemini { background-color: #e8f5e9; color: #1b5e20; align-self: flex-start; }
     </style>
 </head>
 <body>
 
-    <div id="auth-view">
+    <div id="login-container">
         <h1>Welcome to Chat App</h1>
-        <div class="auth-form">
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <div class="auth-buttons">
-                <button id="login-btn">Login</button>
-                <button id="register-btn">Register</button>
-            </div>
-            <p id="auth-error"></p>
-        </div>
+        <p>Please register or log in with your username.</p>
+        <input type="text" id="username-input" placeholder="Enter your username">
+        <br>
+        <button onclick="handleAuth()">Login / Register</button>
+        <div id="login-error"></div>
     </div>
 
     <div id="app-container" class="hidden">
-        <div id="side-panel" class="app-view">
-            <header class="header">
-                <h2>Chats</h2>
-                <div id="current-user"></div>
-                <button id="logout-btn" class="logout-btn" title="Logout">🚪</button>
-            </header>
-            <div id="search-container">
-                <input type="text" id="search-input" placeholder="Search users...">
-                <button id="search-btn">🔍</button>
+        <div id="app-view">
+            <div id="sidebar">
+                <div class="sidebar-header">
+                    <input type="text" id="search-input" placeholder="Search for users...">
+                </div>
+                <div id="search-results"></div>
+                <div class="chat-list-title">Chats</div>
+                <div id="chat-list" style="flex-grow: 1; overflow-y: auto;"></div>
             </div>
-            <div id="search-results"></div>
-            <div id="chat-list"></div>
-        </div>
-
-        <div id="chat-view" class="app-view">
-            <header class="header">
-                <button class="back-btn" id="back-to-chats-btn">‹</button>
-                <h2 id="chat-header-title"></h2>
-            </header>
-            <div id="message-container"></div>
-            <form id="message-form">
-                <input type="file" id="file-input" />
-                <button type="button" id="file-btn">📎</button>
-                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                <button type="submit" id="send-btn">➤</button>
-            </form>
+            <div id="chat-area">
+                <div id="chat-header">Select a chat to start messaging</div>
+                <div id="messages"></div>
+                <div id="message-input-area" class="hidden">
+                    <input type="text" id="message-input" placeholder="Type a message...">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
         </div>
     </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Configuration ---
-    const API_URL = 'https://nasralgram.onrender.com';
+    // Use http://127.0.0.1:5000 for local dev, or your Render URL for production
+    const API_URL = window.location.origin;
 
-    // --- State ---
     let currentUser = null;
-    let activeChat = { id: null, participant: null };
-    let oldestMessageId = null;
-    let isLoadingMessages = false;
-    let socket;
-
-    // --- DOM Elements ---
-    const authView = document.getElementById('auth-view');
-    const appContainer = document.getElementById('app-container');
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
-    const loginBtn = document.getElementById('login-btn');
-    const registerBtn = document.getElementById('register-btn');
-    const authError = document.getElementById('auth-error');
-    const currentUserDisplay = document.getElementById('current-user');
-    const logoutBtn = document.getElementById('logout-btn');
-    const searchInput = document.getElementById('search-input');
-    const searchBtn = document.getElementById('search-btn');
-    const searchResultsContainer = document.getElementById('search-results');
-    const chatListContainer = document.getElementById('chat-list');
-    const backToChatsBtn = document.getElementById('back-to-chats-btn');
-    const chatHeaderTitle = document.getElementById('chat-header-title');
-    const messageContainer = document.getElementById('message-container');
-    const messageForm = document.getElementById('message-form');
-    const messageInput = document.getElementById('message-input');
-    const fileBtn = document.getElementById('file-btn');
-    const fileInput = document.getElementById('file-input');
+    let activeChat = { id: null, name: null, isGemini: false };
     
-
-    // --- Utility Functions ---
-    const apiFetch = async (endpoint, options = {}) => {
-        // Required for cross-domain requests to send cookies
-        options.credentials = 'include';
-        if (options.body && !(options.body instanceof FormData)) {
-            options.headers = { ...options.headers, 'Content-Type': 'application/json' };
-            options.body = JSON.stringify(options.body);
+    // --- INITIALIZATION ---
+    window.onload = function() {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            showAppScreen();
+        } else {
+            showLoginScreen();
         }
 
-        const response = await fetch(`${API_URL}${endpoint}`, options);
-
-        if (response.status === 401) {
-            handleLogout(); // Session expired or invalid, force logout
-            throw new Error("Authentication failed. Please log in again.");
-        }
-
-        const text = await response.text();
-        // Try to parse as JSON, but handle cases where it might be empty (e.g., 204 No Content)
-        const data = text ? JSON.parse(text) : {};
-        
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP error! status: ${response.status}`);
-        }
-        return data;
-    };
-    
-    const showAuthError = (message) => {
-        authError.textContent = message;
-        setTimeout(() => authError.textContent = '', 3000);
-    };
-
-    const formatTimestamp = (isoString) => {
-        if (!isoString) return '';
-        return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
-
-    // --- Socket.IO Connection ---
-    const connectSocket = () => {
-        if (socket && socket.connected) return;
-
-        // withCredentials is required for cross-domain cookie-based authentication
-        socket = io(API_URL, { 
-            autoConnect: true, 
-            withCredentials: true 
-        });
-
-        socket.on('connect', () => console.log('Socket connected! ID:', socket.id));
-        socket.on('disconnect', () => console.log('Socket disconnected!'));
-        socket.on('connect_error', (err) => {
-            console.error("Socket connection error:", err.message);
-            if (err.message === "xhr poll error") {
-                 showAuthError("Connection issue. Please refresh.");
-            }
-        });
-        
-        socket.on('new_message', (msg) => {
-            if (msg.chat_id === activeChat.id) {
-                appendMessage(msg, false);
-            }
-            loadUserChats();
+        document.getElementById('search-input').addEventListener('input', handleSearch);
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
     };
 
-    // --- Authentication ---
-    const handleLogin = async () => {
-        try {
-            const data = await apiFetch('/login', {
-                method: 'POST',
-                body: { username: usernameInput.value, password: passwordInput.value }
-            });
-            if (data.success) {
-                await setupApp(data.username);
-            }
-        } catch (error) {
-            showAuthError(error.message);
-        }
-    };
-    
-    const handleRegister = async () => {
-        try {
-            const data = await apiFetch('/register', {
-                method: 'POST',
-                body: { username: usernameInput.value, password: passwordInput.value }
-            });
-            if (data.success) {
-                alert('Registration successful! Please log in.');
-                passwordInput.value = '';
-            }
-        } catch (error) {
-            showAuthError(error.message);
-        }
-    };
-    
-    const handleLogout = async () => {
-        if (currentUser) { // Only call API if logged in
-            try {
-                await apiFetch('/logout', { method: 'POST' });
-            } catch (error) {
-                console.warn("Logout API call failed, continuing cleanup.", error);
-            }
-        }
-        currentUser = null;
-        activeChat = { id: null, participant: null };
-        authView.classList.remove('hidden');
-        appContainer.classList.add('hidden');
-        if (socket) socket.disconnect();
-    };
+    function showLoginScreen() {
+        document.getElementById('login-container').classList.remove('hidden');
+        document.getElementById('app-container').classList.add('hidden');
+    }
 
-    const checkSession = async () => {
-        try {
-            const data = await apiFetch('/check_session');
-            if (data.loggedIn) {
-                await setupApp(data.username);
-            } else {
-                handleLogout();
-            }
-        } catch (error) {
-            console.log("No active session found.");
-            authView.classList.remove('hidden');
-            appContainer.classList.add('hidden');
-        }
-    };
-    
-    const setupApp = async (username) => {
-        currentUser = username;
-        currentUserDisplay.textContent = `${currentUser}`;
-        authView.classList.add('hidden');
-        appContainer.classList.remove('hidden');
-        connectSocket();
-        await loadUserChats();
-    };
+    async function showAppScreen() {
+        document.getElementById('login-container').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+        await loadChats();
+    }
 
-    // --- Side Panel Logic ---
-    const loadUserChats = async () => {
-        try {
-            const chats = await apiFetch('/get_user_chats');
-            renderChatList(chats);
-        } catch (error) {
-            console.error('Failed to load chats:', error);
-        }
-    };
-
-    const renderChatList = (chats) => {
-        chatListContainer.innerHTML = '';
-        if (chats.length === 0) {
-            chatListContainer.innerHTML = '<div class="list-item"><p>No chats yet. Start one by searching.</p></div>';
+    // --- AUTHENTICATION ---
+    async function handleAuth() {
+        const username = document.getElementById('username-input').value.trim();
+        if (!username) {
+            document.getElementById('login-error').textContent = 'Username cannot be empty.';
             return;
         }
+
+        // Try to log in first
+        let response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username })
+        });
+
+        if (response.ok) {
+            currentUser = await response.json();
+        } else {
+            // If login fails (user not found), try to register
+            response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username })
+            });
+            if (response.ok) {
+                currentUser = await response.json();
+            } else {
+                const error = await response.json();
+                document.getElementById('login-error').textContent = `Error: ${error.error}`;
+                return;
+            }
+        }
+        
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        showAppScreen();
+    }
+
+    // --- CHAT & USER MANAGEMENT ---
+    async function handleSearch() {
+        const query = document.getElementById('search-input').value.trim();
+        const searchResultsDiv = document.getElementById('search-results');
+        
+        if (query.length < 2) {
+            searchResultsDiv.innerHTML = '';
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/users/search?q=${query}&current_user_id=${currentUser.id}`);
+        const users = await response.json();
+        
+        searchResultsDiv.innerHTML = '';
+        users.forEach(user => {
+            const userDiv = document.createElement('div');
+            userDiv.textContent = user.username;
+            userDiv.onclick = () => startChatWithUser(user.id, user.username);
+            searchResultsDiv.appendChild(userDiv);
+        });
+    }
+
+    async function startChatWithUser(otherUserId, otherUsername) {
+        document.getElementById('search-input').value = '';
+        document.getElementById('search-results').innerHTML = '';
+
+        const response = await fetch(`${API_URL}/chats/start`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user1_id: currentUser.id, user2_id: otherUserId })
+        });
+        const chatData = await response.json();
+        
+        await loadChats();
+        openChat(chatData.chat_id, otherUsername, false);
+    }
+    
+    async function loadChats() {
+        const chatListDiv = document.getElementById('chat-list');
+        chatListDiv.innerHTML = '';
+
+        // Pinned Gemini Chat
+        const geminiChat = document.createElement('div');
+        geminiChat.textContent = "Chat with Gemini ✨";
+        geminiChat.dataset.isGemini = true;
+        geminiChat.onclick = () => openChat(null, "Chat with Gemini ✨", true);
+        chatListDiv.appendChild(geminiChat);
+
+        // User Chats
+        const response = await fetch(`${API_URL}/chats?user_id=${currentUser.id}`);
+        const chats = await response.json();
+        
         chats.forEach(chat => {
-            const chatEl = document.createElement('div');
-            chatEl.className = 'list-item';
-            chatEl.dataset.chatId = chat.chat_id;
-            chatEl.dataset.participant = chat.participant_username;
-            chatEl.innerHTML = `
-                <span class="item-main">${chat.participant_username}</span>
-                <span class="item-sub">${chat.last_message || '...'}</span>
-            `;
-            chatListContainer.appendChild(chatEl);
+            const chatDiv = document.createElement('div');
+            chatDiv.textContent = chat.name;
+            chatDiv.dataset.chatId = chat.id;
+            chatDiv.dataset.chatName = chat.name;
+            chatDiv.onclick = () => openChat(chat.id, chat.name, false);
+            chatListDiv.appendChild(chatDiv);
         });
-    };
-    
-    const handleSearch = async () => {
-        const query = searchInput.value.trim();
-        if (!query) return;
-        try {
-            const users = await apiFetch('/search_users', {
-                method: 'POST',
-                body: { query }
-            });
-            renderSearchResults(users);
-        } catch (error) {
-            console.error('Search failed:', error);
-        }
-    };
+        
+        updateActiveChatHighlight();
+    }
 
-    const renderSearchResults = (users) => {
-        chatListContainer.classList.add('hidden');
-        searchResultsContainer.classList.remove('hidden');
-        searchResultsContainer.innerHTML = '';
-        if (users.length === 0) {
-            searchResultsContainer.innerHTML = '<div class="list-item"><p>No users found.</p></div>';
-            return;
+    // --- MESSAGING ---
+    function openChat(chatId, chatName, isGemini) {
+        activeChat = { id: chatId, name: chatName, isGemini: isGemini };
+        
+        document.getElementById('chat-header').textContent = chatName;
+        document.getElementById('message-input-area').classList.remove('hidden');
+        
+        if (isGemini) {
+            document.getElementById('messages').innerHTML = '<div class="message gemini">Hi! How can I help you today?</div>';
+        } else {
+            loadMessages(chatId);
         }
-        users.forEach(username => {
-            const userEl = document.createElement('div');
-            userEl.className = 'list-item';
-            userEl.dataset.username = username;
-            userEl.innerHTML = `<span class="item-main">${username}</span><span class="item-sub">Click to start chat</span>`;
-            searchResultsContainer.appendChild(userEl);
+        updateActiveChatHighlight();
+    }
+    
+    async function loadMessages(chatId) {
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = 'Loading...';
+
+        const response = await fetch(`${API_URL}/chats/${chatId}/messages`);
+        const messages = await response.json();
+        renderMessages(messages);
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('message-input');
+        const content = input.value.trim();
+        if (!content) return;
+        
+        input.value = '';
+
+        if (activeChat.isGemini) {
+            // Display user message immediately
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message sent';
+            userMessageDiv.textContent = content;
+            document.getElementById('messages').appendChild(userMessageDiv);
+            
+            // Send to Gemini API
+            const response = await fetch(`${API_URL}/gemini-chat`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ content: content })
+            });
+            const geminiResponse = await response.json();
+
+            const geminiMessageDiv = document.createElement('div');
+            geminiMessageDiv.className = 'message gemini';
+            geminiMessageDiv.textContent = geminiResponse.content;
+            document.getElementById('messages').appendChild(geminiMessageDiv);
+
+        } else {
+            // Standard user-to-user chat
+            await fetch(`${API_URL}/messages`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    content: content,
+                    sender_id: currentUser.id,
+                    chat_id: activeChat.id
+                })
+            });
+            await loadMessages(activeChat.id);
+        }
+    }
+
+    function renderMessages(messages) {
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = '';
+        messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.classList.add(msg.sender_id === currentUser.id ? 'sent' : 'received');
+            msgDiv.textContent = msg.content;
+            messagesDiv.appendChild(msgDiv);
         });
-    };
-    
-    const handleCreateChat = async (targetUsername) => {
-        try {
-            const data = await apiFetch('/create_chat', {
-                method: 'POST',
-                body: { target_username: targetUsername }
-            });
-            if (data.success) {
-                await loadUserChats();
-                openChat(data.chat_id, data.participant_username);
-            }
-        } catch (error) {
-            console.error('Failed to create chat:', error);
-        }
-    };
+        // Scroll to bottom
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
 
-    // --- Chat View Logic ---
-    const openChat = async (chatId, participantName) => {
-        if (activeChat.id) {
-            socket.emit('leave_room', { chat_id: activeChat.id });
-        }
-        
-        activeChat.id = chatId;
-        activeChat.participant = participantName;
-        oldestMessageId = null;
-        messageContainer.innerHTML = '';
-
-        socket.emit('join_room', { chat_id: chatId });
-
-        chatHeaderTitle.textContent = participantName;
-        appContainer.classList.add('chat-active');
-        
-        await loadMessages(true);
-    };
-
-    const closeChat = () => {
-        if (activeChat.id) {
-            socket.emit('leave_room', { chat_id: activeChat.id });
-        }
-        appContainer.classList.remove('chat-active');
-        activeChat.id = null;
-        activeChat.participant = null;
-    };
-
-    const loadMessages = async (isInitialLoad = false) => {
-        if (isLoadingMessages || (oldestMessageId === -1 && !isInitialLoad)) return;
-        isLoadingMessages = true;
-        
-        let url = `/get_chat_messages/${activeChat.id}`;
-        if (oldestMessageId && !isInitialLoad) {
-            url += `?before=${oldestMessageId}`;
-        }
-        
-        try {
-            const messages = await apiFetch(url);
-            if (messages.length > 0) {
-                messages.forEach(msg => appendMessage(msg, true));
-                oldestMessageId = messages[0].id;
+    function updateActiveChatHighlight() {
+        document.querySelectorAll('#chat-list div').forEach(div => {
+            const isGeminiDiv = div.dataset.isGemini === 'true';
+            const divChatId = parseInt(div.dataset.chatId, 10);
+            
+            if ((activeChat.isGemini && isGeminiDiv) || (divChatId === activeChat.id && !activeChat.isGemini)) {
+                div.classList.add('active-chat');
             } else {
-                oldestMessageId = -1;
+                div.classList.remove('active-chat');
             }
-            if (isInitialLoad) {
-                messageContainer.scrollTop = messageContainer.scrollHeight;
-            } else if (messages.length > 0) {
-                 const firstMessage = messageContainer.firstChild;
-                 messageContainer.scrollTop = firstMessage.offsetTop - 10;
-            }
-        } catch (error) {
-            console.error("Failed to load messages:", error);
-        } finally {
-            isLoadingMessages = false;
-        }
-    };
-    
-    const appendMessage = (msg, prepend = false) => {
-        const msgEl = document.createElement('div');
-        const isMyMessage = msg.sender_username === currentUser;
-        const isAiMessage = msg.sender_username === 'Gemini AI';
-        
-        msgEl.classList.add('message');
-        msgEl.classList.add(isAiMessage ? 'ai-message' : (isMyMessage ? 'my-message' : 'other-message'));
+        });
+    }
 
-        let contentHTML;
-        if (msg.message_type === 'file') {
-            contentHTML = `<a href="${API_URL}/files/${msg.id}" class="file-link" target="_blank">${msg.file_name}</a>`;
-        } else {
-            contentHTML = msg.content;
-        }
-
-        msgEl.innerHTML = `
-            ${!isMyMessage ? `<div class="sender-name">${msg.sender_username}</div>` : ''}
-            <div class="content">${contentHTML}</div>
-            <span class="timestamp">${formatTimestamp(msg.timestamp)}</span>
-        `;
-        
-        if (prepend) {
-            messageContainer.insertBefore(msgEl, messageContainer.firstChild);
-        } else {
-            messageContainer.appendChild(msgEl);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-    };
-
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        const content = messageInput.value.trim();
-        if (content && activeChat.id && socket && socket.connected) {
-            socket.emit('send_message', {
-                chat_id: activeChat.id,
-                content: content
-            });
-            messageInput.value = '';
-        }
-    };
-
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !activeChat.id) return;
-        const formData = new FormData();
-        formData.append('file', file);
-        try {
-            await apiFetch(`/upload_file/${activeChat.id}`, {
-                method: 'POST',
-                body: formData
-            });
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            alert('Error uploading file.');
-        } finally {
-            fileInput.value = '';
-        }
-    };
-
-    // --- Event Listeners ---
-    loginBtn.addEventListener('click', handleLogin);
-    registerBtn.addEventListener('click', handleRegister);
-    [usernameInput, passwordInput].forEach(input => input.addEventListener('keypress', (e) => e.key === 'Enter' && handleLogin()));
-    logoutBtn.addEventListener('click', handleLogout);
-    searchBtn.addEventListener('click', handleSearch);
-    searchInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleSearch());
-    searchInput.addEventListener('input', () => {
-        if (searchInput.value.trim() === '') {
-            searchResultsContainer.classList.add('hidden');
-            chatListContainer.classList.remove('hidden');
-        }
-    });
-
-    chatListContainer.addEventListener('click', (e) => {
-        const chatItem = e.target.closest('.list-item');
-        if (chatItem && chatItem.dataset.chatId) {
-            openChat(parseInt(chatItem.dataset.chatId), chatItem.dataset.participant);
-        }
-    });
-    
-    searchResultsContainer.addEventListener('click', (e) => {
-        const userItem = e.target.closest('.list-item');
-        if (userItem && userItem.dataset.username) {
-            handleCreateChat(userItem.dataset.username);
-        }
-    });
-
-    backToChatsBtn.addEventListener('click', closeChat);
-    messageForm.addEventListener('submit', handleSendMessage);
-    
-    messageContainer.addEventListener('scroll', () => {
-        if (messageContainer.scrollTop === 0 && !isLoadingMessages && oldestMessageId !== -1) {
-            loadMessages();
-        }
-    });
-    
-    fileBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleFileUpload);
-    
-    // --- Initial Load ---
-    checkSession();
-});
 </script>
 </body>
 </html>
